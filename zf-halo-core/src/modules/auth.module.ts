@@ -19,7 +19,8 @@ import { RolesGuard } from '../infrastructure/http/guards/roles.guard';
           configService.get<string>('JWT_SECRET') ||
           'fallback-secret-do-not-use-in-production',
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '7d',
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+            '7d') as '7d',
         },
       }),
     }),
