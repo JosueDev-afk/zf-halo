@@ -1,14 +1,49 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../node_modules/@generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+/// User roles according to ZF-HALO requirements (22% rubric)
+enum Role {
+  USER      // Request loans, view catalog
+  MANAGER   // Approve team loans (Manager/Lead)
+  ADMIN     // Full asset and loan management (Asset Administrator)
+  AUDITOR   // Read-only access + export
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+/// User model with secure password storage and RBAC
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  role         Role     @default(USER)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Future relations
+  // loans       Loan[]    @relation("RequestedLoans")
+  // approvedLoans Loan[]  @relation("ApprovedLoans")
+
+  @@map("users")
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
 }

@@ -36,3 +36,7 @@ zf-halo-core/prisma/*.db-journal
 # Docker volumes
 postgres-data/
 redis-data/
+
+# Skills
+zf-halo-core/.agent
+zf-halo-core/.agents

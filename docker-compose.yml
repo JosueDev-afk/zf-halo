@@ -1,3 +1,6 @@
+volumes:
+  postgres_data:
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -6,29 +9,57 @@ services:
       POSTGRES_USER: user_zf
       POSTGRES_PASSWORD: password_zf
       POSTGRES_DB: zf_halo
-    ports: ["5432:5432"]
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_zf -d zf_halo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     container_name: zf-redis
-    ports: ["6379:6379"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   zf-halo-core:
     build: ./zf-halo-core
-    ports: ["3000:3000"]
+    container_name: zf-core
+    ports:
+      - "3000:3000"
     environment:
       DATABASE_URL: "postgresql://user_zf:password_zf@postgres:5432/zf_halo?schema=public"
-      TELEGRAM_TOKEN: "TU_BOT_TOKEN"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: "dev-secret-change-in-production-32chars"
+      JWT_EXPIRES_IN: "7d"
+      NODE_ENV: development
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   prometheus:
     image: prom/prometheus
-    volumes: ["./prometheus.yml:/etc/prometheus/prometheus.yml"]
-    ports: ["9090:9090"]
+    container_name: zf-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
 
   grafana:
     image: grafana/grafana
-    ports: ["3001:3000"]
-    depends_on: ["prometheus"]
+    container_name: zf-grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
