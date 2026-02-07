@@ -36,5 +36,4 @@ import { AppService } from './app.service';
     },
   ],
 })
-export class AppModule { }
-
+export class AppModule {}

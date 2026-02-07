@@ -6,30 +6,30 @@ import { User, CreateUserData } from '../entities/user.entity';
  * Part of the hexagonal architecture ports layer.
  */
 export interface IUserRepository {
-    /**
-     * Find a user by their unique ID
-     */
-    findById(id: string): Promise<User | null>;
+  /**
+   * Find a user by their unique ID
+   */
+  findById(id: string): Promise<User | null>;
 
-    /**
-     * Find a user by their email address
-     */
-    findByEmail(email: string): Promise<User | null>;
+  /**
+   * Find a user by their email address
+   */
+  findByEmail(email: string): Promise<User | null>;
 
-    /**
-     * Create a new user in the persistence layer
-     */
-    create(data: CreateUserData): Promise<User>;
+  /**
+   * Create a new user in the persistence layer
+   */
+  create(data: CreateUserData): Promise<User>;
 
-    /**
-     * Update an existing user
-     */
-    update(id: string, data: Partial<CreateUserData>): Promise<User>;
+  /**
+   * Update an existing user
+   */
+  update(id: string, data: Partial<CreateUserData>): Promise<User>;
 
-    /**
-     * Soft delete a user by setting isActive to false
-     */
-    deactivate(id: string): Promise<User>;
+  /**
+   * Soft delete a user by setting isActive to false
+   */
+  deactivate(id: string): Promise<User>;
 }
 
 /**

@@ -37,7 +37,9 @@ async function bootstrap() {
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('ZF-HALO API')
-    .setDescription('Hardware Asset Loan Operations - Asset loan management API')
+    .setDescription(
+      'Hardware Asset Loan Operations - Asset loan management API',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -69,7 +71,12 @@ async function bootstrap() {
 
   logger.log(`🚀 ZF-HALO Core running on http://localhost:${port}/api/v1`);
   logger.log(`📚 Swagger docs: http://localhost:${port}/api/v1/docs`);
-  logger.log(`🔐 Auth endpoints: POST /api/v1/auth/register, POST /api/v1/auth/login, GET /api/v1/auth/me`);
+  logger.log(
+    `🔐 Auth endpoints: POST /api/v1/auth/register, POST /api/v1/auth/login, GET /api/v1/auth/me`,
+  );
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Fatal error during bootstrap:', err);
+  process.exit(1);
+});
