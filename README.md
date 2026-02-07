@@ -454,16 +454,21 @@ pnpm install
 ### Configurar Base de Datos
 
 ```bash
-cd zf-halo-core
+# 1. Levantar PostgreSQL y Redis con Docker
+docker-compose up -d postgres redis
 
-# Generar cliente Prisma
+# 2. Configurar variables de entorno
+cd zf-halo-core
+cp .env.example .env
+
+# 3. Generar cliente Prisma
 pnpm prisma generate
 
-# Ejecutar migraciones
+# 4. Ejecutar migraciones
 pnpm prisma migrate dev --name init
 
-# Seed inicial (opcional)
-pnpm prisma db seed
+# 5. (Opcional) Ver base de datos
+pnpm prisma studio
 ```
 
 ---
