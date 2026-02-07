@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '../../../../generated/prisma';
+import { Role } from '@generated/prisma';
 
 export class UserResponseDto {
     @ApiProperty({ example: 'uuid-v4-string', description: 'Unique user ID' })

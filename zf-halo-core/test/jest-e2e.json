@@ -10,8 +10,13 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "transformIgnorePatterns": [
+    "node_modules/(?!@generated/prisma)"
+  ],
   "moduleNameMapper": {
-    "^@/(.*)$": "<rootDir>/../src/$1"
+    "^@/(.*)$": "<rootDir>/../src/$1",
+    "^@generated/prisma$": "<rootDir>/../node_modules/@generated/prisma",
+    "^@generated/prisma/(.*)$": "<rootDir>/../node_modules/@generated/prisma/$1"
   },
   "setupFilesAfterEnv": [
     "<rootDir>/setup.ts"

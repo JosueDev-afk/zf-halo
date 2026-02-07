@@ -31,8 +31,8 @@ async function bootstrap() {
     }),
   );
 
-  // API prefix
-  app.setGlobalPrefix('api');
+  // API prefix with versioning
+  app.setGlobalPrefix('api/v1');
 
   // Swagger configuration
   const config = new DocumentBuilder()
@@ -58,7 +58,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
+  SwaggerModule.setup('api/v1/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
@@ -67,9 +67,9 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
-  logger.log(`🚀 ZF-HALO Core running on http://localhost:${port}/api`);
-  logger.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
-  logger.log(`🔐 Auth endpoints: POST /api/auth/register, POST /api/auth/login, GET /api/auth/me`);
+  logger.log(`🚀 ZF-HALO Core running on http://localhost:${port}/api/v1`);
+  logger.log(`📚 Swagger docs: http://localhost:${port}/api/v1/docs`);
+  logger.log(`🔐 Auth endpoints: POST /api/v1/auth/register, POST /api/v1/auth/login, GET /api/v1/auth/me`);
 }
 
 bootstrap();

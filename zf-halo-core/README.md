@@ -12,31 +12,42 @@ Backend API para el sistema de gestión de préstamos de activos patrimoniales.
 - **Helmet** - Headers de seguridad OWASP
 - **class-validator** - Validación de DTOs
 
-## Estructura del Proyecto
+## Estructura del Proyecto (Arquitectura Hexagonal)
 
 ```
 src/
+├── domain/                # Capa de dominio (core business)
+│   ├── entities/          # Entidades de dominio (User, etc.)
+│   ├── value-objects/     # Objetos de valor (Email, Role)
+│   └── repositories/      # Interfaces de repositorios (puertos)
+│
 ├── application/           # Capa de aplicación
-│   ├── dtos/              # Data Transfer Objects
-│   │   └── auth/          # DTOs de autenticación
+│   ├── dtos/              # Data Transfer Objects por feature
+│   │   ├── auth/          # DTOs de autenticación
+│   │   ├── loan/          # DTOs de préstamos (placeholder)
+│   │   └── asset/         # DTOs de activos (placeholder)
 │   └── services/          # Servicios de aplicación
 │       └── auth.service.ts
 │
-├── infrastructure/        # Capa de infraestructura
+├── infrastructure/        # Capa de infraestructura (adaptadores)
 │   ├── http/
 │   │   ├── controllers/   # Controladores REST
 │   │   ├── decorators/    # @Roles(), @CurrentUser()
 │   │   ├── guards/        # JwtAuthGuard, RolesGuard
 │   │   └── strategies/    # JWT Strategy
 │   └── persistence/
-│       └── prisma/        # PrismaService
+│       └── prisma/        # PrismaService, Repository implementations
 │
 ├── modules/               # Módulos NestJS
 │   └── auth.module.ts
 │
 ├── app.module.ts          # Módulo raíz
 └── main.ts                # Entry point
+
+generated/
+└── prisma/                # Cliente Prisma generado
 ```
+
 
 ## Instalación
 
@@ -59,6 +70,27 @@ JWT_EXPIRES_IN=7d
 PORT=3000
 ```
 
+## API
+
+### Versionado
+
+La API usa **URL versioning** para garantizar compatibilidad:
+
+```
+/api/v1/auth/register   POST   Registrar usuario
+/api/v1/auth/login      POST   Iniciar sesión
+/api/v1/auth/me         GET    Usuario actual (JWT)
+```
+
+### Rate Limiting
+
+Protección global: **10 requests por 60 segundos** por IP.
+
+```typescript
+// @nestjs/throttler
+ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])
+```
+
 ## Base de Datos
 
 ```bash
@@ -71,6 +103,65 @@ pnpm prisma migrate dev --name init
 # Ver base de datos (opcional)
 pnpm prisma studio
 ```
+
+## Prisma ORM v7 Configuration
+
+Este proyecto utiliza **Prisma ORM v7** con las siguientes mejores prácticas:
+
+### Arquitectura
+
+```
+prisma/
+├── schema.prisma     # Schema con generator + modelos
+├── migrations/       # Migraciones SQL
+└── prisma.config.ts  # Config CLI (datasource URL)
+
+node_modules/@generated/prisma/  # Cliente generado
+```
+
+### Características v7
+
+| Característica | Implementación |
+|----------------|----------------|
+| Generator Provider | `prisma-client-js` (CJS compatible con Jest) |
+| Driver Adapter | `@prisma/adapter-pg` para PostgreSQL directo |
+| Config File | `prisma.config.ts` con datasource URL |
+| Output Path | `node_modules/@generated/prisma` |
+
+> **Nota**: Usamos `prisma-client-js` en lugar de `prisma-client` porque el nuevo generador ESM (`prisma-client`) usa `import.meta` que no es compatible con Jest.
+
+### PrismaService con Driver Adapter
+
+```typescript
+// src/infrastructure/persistence/prisma/prisma.service.ts
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@generated/prisma';
+
+export class PrismaService extends PrismaClient {
+    constructor() {
+        const adapter = new PrismaPg({
+            connectionString: process.env.DATABASE_URL
+        });
+        super({ adapter });
+    }
+}
+```
+
+### Comandos Prisma v7
+
+```bash
+# Generar cliente (obligatorio después de cambios en schema)
+pnpm prisma generate
+
+# Migrar base de datos
+pnpm prisma migrate dev --name <nombre>
+
+# Seeding (v7 ya no lo hace automáticamente)
+pnpm prisma db seed
+```
+
+> **Nota**: En Prisma v7, `migrate dev` y `db push` ya no ejecutan `generate` automáticamente.
+
 
 ## Ejecución
 

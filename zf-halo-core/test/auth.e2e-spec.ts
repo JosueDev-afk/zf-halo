@@ -31,7 +31,7 @@ describe('Auth (e2e)', () => {
                 transform: true,
             }),
         );
-        app.setGlobalPrefix('api');
+        app.setGlobalPrefix('api/v1');
 
         await app.init();
 
@@ -48,10 +48,10 @@ describe('Auth (e2e)', () => {
         await app.close();
     });
 
-    describe('POST /api/auth/register', () => {
+    describe('POST /api/v1/auth/register', () => {
         it('should register a new user successfully', async () => {
             const response = await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send(testUser)
                 .expect(201);
 
@@ -67,50 +67,50 @@ describe('Auth (e2e)', () => {
         it('should reject duplicate email', async () => {
             // First registration
             await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send(testUser)
                 .expect(201);
 
             // Second registration with same email
             await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send(testUser)
                 .expect(409);
         });
 
         it('should reject weak password', async () => {
             await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send({ ...testUser, password: 'weak' })
                 .expect(400);
         });
 
         it('should reject invalid email', async () => {
             await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send({ ...testUser, email: 'invalid-email' })
                 .expect(400);
         });
 
         it('should reject missing required fields', async () => {
             await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send({ email: testUser.email })
                 .expect(400);
         });
     });
 
-    describe('POST /api/auth/login', () => {
+    describe('POST /api/v1/auth/login', () => {
         beforeEach(async () => {
             // Register user before login tests
             await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send(testUser);
         });
 
         it('should login successfully with valid credentials', async () => {
             const response = await request(app.getHttpServer())
-                .post('/api/auth/login')
+                .post('/api/v1/auth/login')
                 .send({
                     email: testUser.email,
                     password: testUser.password,
@@ -123,7 +123,7 @@ describe('Auth (e2e)', () => {
 
         it('should reject invalid password', async () => {
             await request(app.getHttpServer())
-                .post('/api/auth/login')
+                .post('/api/v1/auth/login')
                 .send({
                     email: testUser.email,
                     password: 'WrongPassword123',
@@ -133,7 +133,7 @@ describe('Auth (e2e)', () => {
 
         it('should reject non-existent user', async () => {
             await request(app.getHttpServer())
-                .post('/api/auth/login')
+                .post('/api/v1/auth/login')
                 .send({
                     email: 'nonexistent@example.com',
                     password: 'TestPass123',
@@ -142,20 +142,20 @@ describe('Auth (e2e)', () => {
         });
     });
 
-    describe('GET /api/auth/me', () => {
+    describe('GET /api/v1/auth/me', () => {
         let accessToken: string;
 
         beforeEach(async () => {
             // Register and login to get token
             const response = await request(app.getHttpServer())
-                .post('/api/auth/register')
+                .post('/api/v1/auth/register')
                 .send(testUser);
             accessToken = response.body.accessToken;
         });
 
         it('should return current user with valid token', async () => {
             const response = await request(app.getHttpServer())
-                .get('/api/auth/me')
+                .get('/api/v1/auth/me')
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -165,13 +165,13 @@ describe('Auth (e2e)', () => {
 
         it('should reject request without token', async () => {
             await request(app.getHttpServer())
-                .get('/api/auth/me')
+                .get('/api/v1/auth/me')
                 .expect(401);
         });
 
         it('should reject invalid token', async () => {
             await request(app.getHttpServer())
-                .get('/api/auth/me')
+                .get('/api/v1/auth/me')
                 .set('Authorization', 'Bearer invalid-token')
                 .expect(401);
         });

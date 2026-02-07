@@ -7,7 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { LoginDto, RegisterDto, AuthResponseDto, UserResponseDto } from '../dtos/auth';
-import { Role } from '../../../generated/prisma';
+import { Role } from '@generated/prisma';
 
 export interface JwtPayload {
     sub: string;
