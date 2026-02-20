@@ -4,33 +4,33 @@
  * Following DDD patterns for immutable value objects.
  */
 export class Email {
-  private readonly _value: string;
+    private readonly _value: string;
 
-  private constructor(email: string) {
-    this._value = email.toLowerCase().trim();
-  }
-
-  static create(email: string): Email {
-    if (!Email.isValid(email)) {
-      throw new Error('Invalid email format');
+    private constructor(email: string) {
+        this._value = email.toLowerCase().trim();
     }
-    return new Email(email);
-  }
 
-  static isValid(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
+    static create(email: string): Email {
+        if (!Email.isValid(email)) {
+            throw new Error('Invalid email format');
+        }
+        return new Email(email);
+    }
 
-  get value(): string {
-    return this._value;
-  }
+    static isValid(email: string): boolean {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
 
-  equals(other: Email): boolean {
-    return this._value === other._value;
-  }
+    get value(): string {
+        return this._value;
+    }
 
-  toString(): string {
-    return this._value;
-  }
+    equals(other: Email): boolean {
+        return this._value === other._value;
+    }
+
+    toString(): string {
+        return this._value;
+    }
 }

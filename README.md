@@ -146,7 +146,10 @@ El backend implementa **Arquitectura Hexagonal** para garantizar separación de 
 | **Queue** | BullMQ | Procesamiento de jobs en background |
 | **Security** | Helmet + CORS | Protección contra vulnerabilidades OWASP |
 | **Metrics** | Prometheus | Exportación de métricas para observabilidad |
-| **Notifications** | Telegraf | Notificaciones vía Telegram Bot |
+| **Accounts & Permissions** | NestJS Guards/Decorators |
+  - Two-step registration flow: Sign-up -> Admin Approval -> Active User.
+  - Role-Based Access Control (RBAC) with granular permissions (e.g., `loan:approve`, `asset:manage`).
+  - Guards and Decorators for secure endpoint protection.
 | **Validation** | class-validator | Validación de DTOs y request bodies |
 | **Testing** | Jest + Supertest | Unit tests y E2E tests |
 

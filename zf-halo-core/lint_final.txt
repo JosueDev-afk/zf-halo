@@ -1,0 +1,16 @@
+
+> zf-halo-core@0.0.1 lint /Users/nietzshn/meetup/zf-halo/zf-halo-core
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+
+/Users/nietzshn/meetup/zf-halo/zf-halo-core/test/accounts.e2e-spec.ts
+    4:10  error    'App' is defined but never used                                      @typescript-eslint/no-unused-vars
+   46:36  warning  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+   71:38  warning  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+   97:21  warning  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+  122:21  warning  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+  129:21  warning  Unsafe argument of type `any` assigned to a parameter of type `App`  @typescript-eslint/no-unsafe-argument
+
+✖ 6 problems (1 error, 5 warnings)
+
+ ELIFECYCLE  Command failed with exit code 1.
