@@ -23,23 +23,26 @@ export function BottomNav() {
                         key={item.to}
                         to={item.to}
                         className={cn(
-                            "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-all duration-200",
+                            "relative flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-all duration-200",
                             isActive(item.to)
                                 ? "text-primary"
                                 : "text-muted-foreground active:scale-95"
                         )}
                     >
-                        <item.icon className={cn("h-5 w-5 transition-transform duration-200", isActive(item.to) && "scale-110")} />
+                        <item.icon className={cn("h-5 w-5 transition-transform duration-200", isActive(item.to) ? "scale-110" : "")} />
                         <span className="text-[10px] font-medium">{item.label}</span>
-                        {isActive(item.to) && (
-                            <div className="absolute -bottom-0 h-0.5 w-6 rounded-full bg-primary" />
-                        )}
+                        {isActive(item.to) ? (
+                            <div className="absolute bottom-0 h-0.5 w-6 rounded-full bg-primary" />
+                        ) : null}
                     </Link>
                 ))}
 
                 {/* Center Scan Button */}
                 <div className="-mt-6">
-                    <button className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-400 text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:shadow-xl hover:shadow-primary/40 active:scale-90">
+                    <button
+                        className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-400 text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:shadow-xl hover:shadow-primary/40 active:scale-90"
+                        aria-label="Scan QR code"
+                    >
                         <Scan className="h-6 w-6" />
                     </button>
                 </div>
@@ -49,17 +52,17 @@ export function BottomNav() {
                         key={item.to}
                         to={item.to}
                         className={cn(
-                            "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-all duration-200",
+                            "relative flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-all duration-200",
                             isActive(item.to)
                                 ? "text-primary"
                                 : "text-muted-foreground active:scale-95"
                         )}
                     >
-                        <item.icon className={cn("h-5 w-5 transition-transform duration-200", isActive(item.to) && "scale-110")} />
+                        <item.icon className={cn("h-5 w-5 transition-transform duration-200", isActive(item.to) ? "scale-110" : "")} />
                         <span className="text-[10px] font-medium">{item.label}</span>
-                        {isActive(item.to) && (
-                            <div className="absolute -bottom-0 h-0.5 w-6 rounded-full bg-primary" />
-                        )}
+                        {isActive(item.to) ? (
+                            <div className="absolute bottom-0 h-0.5 w-6 rounded-full bg-primary" />
+                        ) : null}
                     </Link>
                 ))}
             </nav>

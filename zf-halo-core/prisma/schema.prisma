@@ -63,3 +63,77 @@ model AccountRequest {
   @@index([status])
   @@index([email])
 }
+
+// ==========================================
+// ASSET ENUMS
+// ==========================================
+
+/// Machine operational status (from ZF ADAS catalog)
+enum MachineStatus {
+  OPERATIVE
+  IN_MAINTENANCE
+  OUT_OF_SERVICE
+  CALIBRATION
+  LOANED
+  DECOMMISSIONED
+  IN_TRANSIT
+  IN_CUSTOMS
+  UNDER_EVALUATION
+  CANNIBALIZED
+  IMPAIRMENT
+}
+
+/// Purchase origin type
+enum PurchaseType {
+  IMPORT
+  NATIONAL
+}
+
+/// National purchase sub-type
+enum NationalType {
+  OWN
+  TEMPORARY
+  DEFINITIVE
+}
+
+// ==========================================
+// ASSET MODEL
+// ==========================================
+
+/// Asset catalog based on ZF ADAS Excel columns
+model Asset {
+  id               String         @id @default(uuid())
+  identifier       Int            @unique
+  area             String
+  subArea          String         @map("sub_area")
+  category         String
+  initialQuantity  Int?           @map("initial_quantity")   // Only for spare parts
+  currentQuantity  Int?           @map("current_quantity")   // Only for spare parts
+  projectName      String         @map("project_name")
+  machineName      String         @map("machine_name")
+  tag              String         @unique                     // QR code
+  serialNumber     String         @unique @map("serial_number")
+  model            String
+  brand            String
+  year             Int?
+  customsDocument  String?        @map("customs_document")   // Pedimento
+  invoice          String?                                    // Factura
+  commercialValue  Decimal        @map("commercial_value")
+  purchaseDate     DateTime?      @map("purchase_date")
+  description      String?
+  comments         String?
+  purchaseType     PurchaseType   @map("purchase_type")
+  nationalType     NationalType?  @map("national_type")
+  machineStatus    MachineStatus  @default(OPERATIVE) @map("machine_status")
+  isPurchased      Boolean        @default(false) @map("is_purchased")
+  isActive         Boolean        @default(true) @map("is_active")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  @@map("assets")
+  @@index([tag])
+  @@index([area])
+  @@index([machineStatus])
+  @@index([isActive])
+  @@index([identifier])
+}

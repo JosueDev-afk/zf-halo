@@ -3,9 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
-import { Role } from '@generated/prisma';
+
 import { AuthModule } from './modules/auth.module';
 import { UsersModule } from './modules/users.module';
+import { AssetsModule } from './modules/assets.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountController } from './infrastructure/http/controllers/account.controller';
@@ -34,6 +35,7 @@ import { PrismaAccountRequestRepository } from './infrastructure/persistence/pri
         // Features
         AuthModule,
         UsersModule,
+        AssetsModule,
     ],
     controllers: [AppController, AccountController],
     providers: [
@@ -52,4 +54,4 @@ import { PrismaAccountRequestRepository } from './infrastructure/persistence/pri
         },
     ],
 })
-export class AppModule {}
+export class AppModule { }

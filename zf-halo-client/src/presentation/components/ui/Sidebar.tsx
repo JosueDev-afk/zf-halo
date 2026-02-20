@@ -31,13 +31,13 @@ function NavItem({ to, icon, label, isActive, onClick }: NavItemProps) {
             )}
         >
             {/* Active indicator bar */}
-            {isActive && (
+            {isActive ? (
                 <motion.div
                     layoutId="sidebar-active"
                     className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-primary"
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                 />
-            )}
+            ) : null}
             <span className={cn(
                 "transition-transform duration-200",
                 isActive ? "scale-110" : "group-hover:scale-110"
@@ -136,7 +136,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             onClick={handleNavClick}
                         />
 
-                        {isAdmin && (
+                        {isAdmin ? (
                             <>
                                 <div className="my-3 h-px bg-white/[0.06]" />
                                 <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
@@ -157,7 +157,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     onClick={handleNavClick}
                                 />
                             </>
-                        )}
+                        ) : null}
                     </nav>
                 </div>
 
@@ -181,7 +181,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </nav>
 
                     {/* User card */}
-                    {user && (
+                    {user ? (
                         <div className="mt-3 flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2.5 border border-white/[0.06]">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/30 to-blue-500/20 text-sm font-bold text-primary ring-1 ring-primary/20">
                                 {user.firstName.charAt(0)}{user.lastName.charAt(0)}
@@ -191,7 +191,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 <p className="truncate text-xs text-muted-foreground">{user.role}</p>
                             </div>
                         </div>
-                    )}
+                    ) : null}
                 </div>
             </motion.aside>
         </>

@@ -11,7 +11,7 @@ export function Globe({ className }: { className?: string }) {
         if (!canvasRef.current) return;
 
         const globe = createGlobe(canvasRef.current, {
-            devicePixelRatio: 2,
+            devicePixelRatio: window.devicePixelRatio || 2,
             width: 600 * 2,
             height: 600 * 2,
             phi: 0,

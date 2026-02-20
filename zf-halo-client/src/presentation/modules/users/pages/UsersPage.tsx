@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 import { Users, Search, Shield, Mail, ToggleLeft, ToggleRight } from "lucide-react"
 import type { User } from "@/domain/auth/models/user.model"
@@ -8,35 +9,24 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 export default function UsersPage() {
-    const [users, setUsers] = useState<User[]>([])
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient()
     const [search, setSearch] = useState("")
 
-    useEffect(() => {
-        loadUsers()
-    }, [])
+    const { data: users = [], isLoading: loading } = useQuery<User[]>({
+        queryKey: ["users"],
+        queryFn: () => adminApi.getUsers(),
+    })
 
-    const loadUsers = async () => {
-        try {
-            setLoading(true)
-            const data = await adminApi.getUsers()
-            setUsers(data)
-        } catch {
-            toast.error("Failed to load users")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const handleDeactivate = async (userId: string) => {
-        try {
-            await adminApi.deactivateUser(userId)
+    const deactivateMutation = useMutation({
+        mutationFn: (userId: string) => adminApi.deactivateUser(userId),
+        onSuccess: () => {
             toast.success("User deactivated")
-            await loadUsers()
-        } catch {
+            void queryClient.invalidateQueries({ queryKey: ["users"] })
+        },
+        onError: () => {
             toast.error("Failed to deactivate user")
-        }
-    }
+        },
+    })
 
     const filtered = users.filter(u =>
         `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase())
@@ -76,20 +66,18 @@ export default function UsersPage() {
                         placeholder="Search users..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="h-10 w-full rounded-xl border border-white/[0.06] bg-white/[0.03] pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:w-64"
+                        aria-label="Search users"
+                        className="h-10 w-full rounded-xl border border-white/[0.1] bg-white/[0.06] pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:w-64"
                     />
                 </div>
             </motion.div>
 
             {/* Loading */}
-            {loading && (
+            {loading ? (
                 <div className="flex items-center justify-center py-20">
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 </div>
-            )}
-
-            {/* Users Table / Cards */}
-            {!loading && (
+            ) : (
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -97,7 +85,7 @@ export default function UsersPage() {
                     className="space-y-2"
                 >
                     {/* Desktop Header */}
-                    <div className="hidden rounded-xl bg-white/[0.02] px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground md:grid md:grid-cols-12 md:gap-4">
+                    <div className="hidden rounded-xl bg-white/[0.06] px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground md:grid md:grid-cols-12 md:gap-4">
                         <div className="col-span-4">User</div>
                         <div className="col-span-3">Email</div>
                         <div className="col-span-2">Role</div>
@@ -105,19 +93,19 @@ export default function UsersPage() {
                         <div className="col-span-2 text-right">Actions</div>
                     </div>
 
-                    {filtered.length === 0 && (
+                    {filtered.length === 0 ? (
                         <div className="py-16 text-center text-muted-foreground">
                             {search ? "No users match your search" : "No users found"}
                         </div>
-                    )}
+                    ) : null}
 
                     {filtered.map((user, i) => (
                         <motion.div
                             key={user.id}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.2, delay: i * 0.03 }}
-                            className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04] md:grid md:grid-cols-12 md:items-center md:gap-4"
+                            transition={{ duration: 0.2, delay: Math.min(i, 10) * 0.03 }}
+                            className="group rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 transition-colors hover:bg-white/[0.06] md:grid md:grid-cols-12 md:items-center md:gap-4"
                         >
                             {/* User Info */}
                             <div className="col-span-4 mb-2 flex items-center gap-3 md:mb-0">
@@ -165,8 +153,9 @@ export default function UsersPage() {
                             <div className="col-span-2 flex justify-end">
                                 {user.isActive ? (
                                     <button
-                                        onClick={() => void handleDeactivate(user.id)}
-                                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 transition-all hover:bg-red-500/10 active:scale-95"
+                                        onClick={() => deactivateMutation.mutate(user.id)}
+                                        disabled={deactivateMutation.isPending}
+                                        className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 transition-all hover:bg-red-500/10 active:scale-95"
                                     >
                                         <ToggleRight className="h-3.5 w-3.5" />
                                         Deactivate
@@ -185,3 +174,4 @@ export default function UsersPage() {
         </div>
     )
 }
+

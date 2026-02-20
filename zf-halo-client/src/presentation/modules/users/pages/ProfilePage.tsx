@@ -58,7 +58,7 @@ export default function ProfilePage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5 backdrop-blur-sm"
+                className="rounded-2xl border border-white/[0.1] bg-white/[0.05] p-5 backdrop-blur-sm"
             >
                 <h2 className="mb-5 text-base font-semibold">Personal Information</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -74,7 +74,7 @@ export default function ProfilePage() {
                                 <field.icon className="h-3.5 w-3.5" />
                                 {field.label}
                             </label>
-                            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-sm font-medium">
+                            <div className="rounded-xl border border-white/[0.1] bg-white/[0.06] px-3 py-2.5 text-sm font-medium">
                                 {field.value}
                             </div>
                         </motion.div>

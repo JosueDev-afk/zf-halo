@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { UserPlus, Clock, Check, Mail, X } from "lucide-react"
 import { adminApi, type AccountRequest } from "@/infrastructure/http/admin.api"
@@ -7,39 +8,29 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 export default function PendingApprovalsPage() {
-    const [requests, setRequests] = useState<AccountRequest[]>([])
-    const [loading, setLoading] = useState(true)
-    const [approving, setApproving] = useState<string | null>(null)
+    const queryClient = useQueryClient()
     const [selectedRole, setSelectedRole] = useState<Record<string, Role>>({})
 
-    useEffect(() => {
-        loadRequests()
-    }, [])
+    const { data: requests = [], isLoading: loading } = useQuery<AccountRequest[]>({
+        queryKey: ["account-requests"],
+        queryFn: () => adminApi.getAccountRequests(),
+    })
 
-    const loadRequests = async () => {
-        try {
-            setLoading(true)
-            const data = await adminApi.getAccountRequests()
-            setRequests(data)
-        } catch {
-            toast.error("Failed to load account requests")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const handleApprove = async (id: string) => {
-        const role = selectedRole[id] ?? Role.USER
-        try {
-            setApproving(id)
-            await adminApi.approveAccount(id, role)
+    const approveMutation = useMutation({
+        mutationFn: ({ id, role }: { id: string; role: Role }) =>
+            adminApi.approveAccount(id, role),
+        onSuccess: () => {
             toast.success("Account approved successfully")
-            await loadRequests()
-        } catch {
+            void queryClient.invalidateQueries({ queryKey: ["account-requests"] })
+        },
+        onError: () => {
             toast.error("Failed to approve account")
-        } finally {
-            setApproving(null)
-        }
+        },
+    })
+
+    const handleApprove = (id: string) => {
+        const role = selectedRole[id] ?? Role.USER
+        approveMutation.mutate({ id, role })
     }
 
     const pendingRequests = requests.filter(r => r.status === "PENDING")
@@ -68,13 +59,11 @@ export default function PendingApprovalsPage() {
             </motion.div>
 
             {/* Loading */}
-            {loading && (
+            {loading ? (
                 <div className="flex items-center justify-center py-20">
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 </div>
-            )}
-
-            {!loading && (
+            ) : (
                 <>
                     {/* Pending Section */}
                     {pendingRequests.length === 0 ? (
@@ -96,7 +85,7 @@ export default function PendingApprovalsPage() {
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.2, delay: i * 0.05 }}
+                                        transition={{ duration: 0.2, delay: Math.min(i, 10) * 0.05 }}
                                         className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5"
                                     >
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -124,6 +113,7 @@ export default function PendingApprovalsPage() {
                                                 <select
                                                     value={selectedRole[req.id] ?? Role.USER}
                                                     onChange={e => setSelectedRole(prev => ({ ...prev, [req.id]: e.target.value as Role }))}
+                                                    aria-label={`Assign role for ${req.firstName} ${req.lastName}`}
                                                     className="h-9 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                                                 >
                                                     {roles.map(r => (
@@ -133,15 +123,15 @@ export default function PendingApprovalsPage() {
 
                                                 {/* Approve */}
                                                 <button
-                                                    onClick={() => void handleApprove(req.id)}
-                                                    disabled={approving === req.id}
+                                                    onClick={() => handleApprove(req.id)}
+                                                    disabled={approveMutation.isPending && approveMutation.variables?.id === req.id}
                                                     className={cn(
-                                                        "flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-95",
+                                                        "flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-95",
                                                         "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20 hover:bg-emerald-500/25",
-                                                        approving === req.id && "opacity-50 pointer-events-none"
+                                                        approveMutation.isPending && approveMutation.variables?.id === req.id && "opacity-50 pointer-events-none"
                                                     )}
                                                 >
-                                                    {approving === req.id ? (
+                                                    {approveMutation.isPending && approveMutation.variables?.id === req.id ? (
                                                         <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
                                                     ) : (
                                                         <Check className="h-3.5 w-3.5" />
@@ -157,7 +147,7 @@ export default function PendingApprovalsPage() {
                     )}
 
                     {/* Processed Requests */}
-                    {processedRequests.length > 0 && (
+                    {processedRequests.length > 0 ? (
                         <div className="mt-8">
                             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
                                 Previously Processed
@@ -190,9 +180,10 @@ export default function PendingApprovalsPage() {
                                 ))}
                             </div>
                         </div>
-                    )}
+                    ) : null}
                 </>
             )}
         </div>
     )
 }
+

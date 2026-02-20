@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import type { User } from '@/domain/auth/models/user.model';
 import type { IAuthRepository, LoginInput, RegisterInput } from '@/domain/auth/repositories/auth.repository.interface';
 import { AuthRepositoryImpl } from '@/infrastructure/auth/auth.repository.impl';
+import { updateCachedToken } from '@/infrastructure/http/client';
+import { isAxiosError } from 'axios';
 
 interface AuthState {
     user: User | null;
@@ -21,9 +23,17 @@ interface AuthActions {
     resetError: () => void;
 }
 
-// Dependency Injection could be done via Context or Factory, 
-// but for simple Zustand usage, instantiating here is acceptable or passing via props/init.
 const authRepository: IAuthRepository = new AuthRepositoryImpl();
+
+function extractErrorMessage(error: unknown, fallback: string): string {
+    if (isAxiosError(error)) {
+        return (error.response?.data as { message?: string })?.message ?? fallback;
+    }
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return fallback;
+}
 
 export const useAuthStore = create<AuthState & AuthActions>()(
     persist(
@@ -38,6 +48,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 set({ isLoading: true, error: null });
                 try {
                     const response = await authRepository.login(credentials);
+                    updateCachedToken(response.token);
                     set({
                         user: response.user,
                         token: response.token,
@@ -45,12 +56,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                         isLoading: false
                     });
                     toast.success(`Welcome back, ${response.user.firstName}!`);
-                } catch (error: any) {
-                    const message = error.response?.data?.message || 'Login failed';
-                    set({
-                        error: message,
-                        isLoading: false
-                    });
+                } catch (error: unknown) {
+                    const message = extractErrorMessage(error, 'Login failed');
+                    set({ error: message, isLoading: false });
                     toast.error(message);
                     throw error;
                 }
@@ -60,22 +68,18 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 set({ isLoading: true, error: null });
                 try {
                     await authRepository.register(data);
-                    // Optionally auto-login or require explicit login
-                    // For now just finish loading
                     set({ isLoading: false });
                     toast.success('Account created successfully! Please login.');
-                } catch (error: any) {
-                    const message = error.response?.data?.message || 'Registration failed';
-                    set({
-                        error: message,
-                        isLoading: false
-                    });
+                } catch (error: unknown) {
+                    const message = extractErrorMessage(error, 'Registration failed');
+                    set({ error: message, isLoading: false });
                     toast.error(message);
                     throw error;
                 }
             },
 
             logout: () => {
+                updateCachedToken(null);
                 set({ user: null, token: null, isAuthenticated: false });
                 authRepository.logout();
             },
@@ -87,7 +91,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 try {
                     const user = await authRepository.getProfile();
                     set({ user, isAuthenticated: true });
-                } catch (error) {
+                } catch {
+                    updateCachedToken(null);
                     set({ user: null, token: null, isAuthenticated: false });
                 }
             },
@@ -97,7 +102,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         {
             name: 'auth-storage',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }), // Persist only necessary fields
+            partialize: (state) => ({
+                token: state.token,
+                user: state.user,
+                isAuthenticated: state.isAuthenticated,
+            }),
         }
     )
 );
+

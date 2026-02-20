@@ -1,91 +1,108 @@
-import { createRouter, createRoute, redirect } from '@tanstack/react-router'
+import { createRouter, createRoute, redirect, lazyRouteComponent } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
-import LoginPage from './modules/auth/pages/LoginPage'
-import RegisterPage from './modules/auth/pages/RegisterPage'
 import { useAuthStore } from '@/application/auth/auth.store'
 
-import ProfilePage from './modules/users/pages/ProfilePage'
-import UsersPage from './modules/users/pages/UsersPage'
-import PendingApprovalsPage from './modules/users/pages/PendingApprovalsPage'
-
-// 1. Define Routes
-const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/',
-    component: () => <div className="p-4 text-center text-4xl font-bold"> Dashboard(Protected)</div>,
-    beforeLoad: async () => {
+// Auth guard helper
+function requireAuth() {
+    return async () => {
         const { isAuthenticated, checkAuth } = useAuthStore.getState()
         if (!isAuthenticated) {
-            // Try to check auth from storage if not in state
             await checkAuth()
             const updatedState = useAuthStore.getState()
             if (!updatedState.isAuthenticated) {
-                throw redirect({
-                    to: '/login',
-                })
+                throw redirect({ to: '/login' })
             }
         }
     }
+}
+
+function requireGuest() {
+    return async () => {
+        const { isAuthenticated } = useAuthStore.getState()
+        if (isAuthenticated) {
+            throw redirect({ to: '/' })
+        }
+    }
+}
+
+// 1. Define Routes with lazy-loaded components
+const indexRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/',
+    component: lazyRouteComponent(() => import('./modules/dashboard/pages/DashboardPage')),
+    beforeLoad: requireAuth(),
 })
 
 const loginRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/login',
-    component: LoginPage,
-    beforeLoad: async () => {
-        const { isAuthenticated } = useAuthStore.getState()
-        if (isAuthenticated) {
-            throw redirect({ to: '/' })
-        }
-    }
+    component: lazyRouteComponent(() => import('./modules/auth/pages/LoginPage')),
+    beforeLoad: requireGuest(),
 })
 
 const registerRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/register',
-    component: RegisterPage,
-    beforeLoad: async () => {
-        const { isAuthenticated } = useAuthStore.getState()
-        if (isAuthenticated) {
-            throw redirect({ to: '/' })
-        }
-    }
+    component: lazyRouteComponent(() => import('./modules/auth/pages/RegisterPage')),
+    beforeLoad: requireGuest(),
 })
 
 const assetsRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/assets',
-    component: () => <div className="p-4 text-center text-4xl font-bold">Assets (Coming Soon)</div>,
+    component: lazyRouteComponent(() => import('./modules/assets/pages/AssetsPage')),
+    beforeLoad: requireAuth(),
+})
+
+const assetNewRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/assets/new',
+    component: lazyRouteComponent(() => import('./modules/assets/pages/AssetFormPage')),
+    beforeLoad: requireAuth(),
+})
+
+const assetDetailRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/assets/$id',
+    component: lazyRouteComponent(() => import('./modules/assets/pages/AssetDetailPage')),
+    beforeLoad: requireAuth(),
+})
+
+const assetEditRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/assets/$id/edit',
+    component: lazyRouteComponent(() => import('./modules/assets/pages/AssetFormPage')),
+    beforeLoad: requireAuth(),
 })
 
 const loansRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/loans',
-    component: () => <div className="p-4 text-center text-4xl font-bold">Loans (Coming Soon)</div>,
+    component: lazyRouteComponent(() => import('./modules/loans/pages/LoansPage')),
 })
 
 const profileRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/profile',
-    component: ProfilePage,
+    component: lazyRouteComponent(() => import('./modules/users/pages/ProfilePage')),
 })
 
 const usersRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/users',
-    component: UsersPage,
+    component: lazyRouteComponent(() => import('./modules/users/pages/UsersPage')),
 })
 
 const usersPendingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/users/pending',
-    component: PendingApprovalsPage,
+    component: lazyRouteComponent(() => import('./modules/users/pages/PendingApprovalsPage')),
 })
 
 const notificationsRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/notifications',
-    component: () => <div className="p-4 text-center text-4xl font-bold">Notifications (Coming Soon)</div>,
+    component: lazyRouteComponent(() => import('./modules/notifications/pages/NotificationsPage')),
 })
 
 // 2. Create Route Tree
@@ -94,6 +111,9 @@ const routeTree = rootRoute.addChildren([
     loginRoute,
     registerRoute,
     assetsRoute,
+    assetNewRoute,
+    assetDetailRoute,
+    assetEditRoute,
     loansRoute,
     profileRoute,
     usersRoute,
@@ -110,3 +130,4 @@ declare module '@tanstack/react-router' {
         router: typeof router
     }
 }
+

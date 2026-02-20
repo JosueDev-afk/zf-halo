@@ -5,6 +5,8 @@ import { motion } from "framer-motion"
 const routeLabels: Record<string, string> = {
     "": "Dashboard",
     "assets": "Assets",
+    "new": "New Asset",
+    "edit": "Edit Asset",
     "loans": "Loans",
     "users": "Users",
     "pending": "Pending Approvals",
@@ -35,7 +37,16 @@ export function Breadcrumbs() {
             {segments.map((segment, index) => {
                 const path = `/${segments.slice(0, index + 1).join("/")}`
                 const isLast = index === segments.length - 1
-                const label = routeLabels[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1)
+
+                let label = routeLabels[segment]
+                if (!label) {
+                    const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(segment)
+                    if (isUUID && index > 0 && segments[index - 1] === "assets") {
+                        label = "Asset Details"
+                    } else {
+                        label = segment.charAt(0).toUpperCase() + segment.slice(1)
+                    }
+                }
 
                 return (
                     <motion.span
