@@ -4,12 +4,12 @@ import { AccountRequest } from '../../../domain/entities/account-request.entity'
 
 @Injectable()
 export class GetAccountRequestsUseCase {
-    constructor(
-        @Inject('AccountRequestRepository')
-        private readonly accountRequestRepository: AccountRequestRepository,
-    ) {}
+  constructor(
+    @Inject('AccountRequestRepository')
+    private readonly accountRequestRepository: AccountRequestRepository,
+  ) {}
 
-    async execute(): Promise<AccountRequest[]> {
-        return this.accountRequestRepository.findPending();
-    }
+  async execute(): Promise<AccountRequest[]> {
+    return this.accountRequestRepository.findPending();
+  }
 }

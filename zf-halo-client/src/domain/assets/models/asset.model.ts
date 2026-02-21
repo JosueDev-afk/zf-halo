@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 // ─── Enums ─────────────────────────────────────────
 
 export const MachineStatus = {
@@ -105,30 +107,35 @@ export interface Asset {
 
 // ─── Input Types ───────────────────────────────────
 
-export interface CreateAssetInput {
-    identifier: number;
-    area: string;
-    subArea: string;
-    category: string;
-    initialQuantity?: number | null;
-    currentQuantity?: number | null;
-    projectName: string;
-    machineName: string;
-    tag: string;
-    serialNumber: string;
-    model: string;
-    brand: string;
-    year?: number | null;
-    customsDocument?: string | null;
-    invoice?: string | null;
-    commercialValue: number;
-    purchaseDate?: string | null;
-    description?: string | null;
-    comments?: string | null;
-    purchaseType: PurchaseType;
-    nationalType?: NationalType | null;
-    machineStatus?: MachineStatus;
-    isPurchased?: boolean;
-}
+export const createAssetSchema = z.object({
+    identifier: z.number().min(1, "Identifier is required"),
+    area: z.string().min(1, "Area is required"),
+    subArea: z.string().min(1, "Sub Area is required"),
+    category: z.string().min(1, "Category is required"),
+    projectName: z.string().min(1, "Project Name is required"),
+    machineName: z.string().min(1, "Machine Name is required"),
+    tag: z.string().min(1, "Tag is required"),
+    serialNumber: z.string().min(1, "Serial Number is required"),
+    model: z.string().min(1, "Model is required"),
+    brand: z.string().min(1, "Brand is required"),
+    commercialValue: z.number().min(0, "Value must be 0 or greater"),
+    purchaseType: z.nativeEnum(PurchaseType),
+    machineStatus: z.nativeEnum(MachineStatus),
+    isPurchased: z.boolean().default(false),
+
+    // Optional / Nullable fields
+    year: z.number().nullable().optional(),
+    customsDocument: z.string().nullable().optional(),
+    invoice: z.string().nullable().optional(),
+    initialQuantity: z.number().nullable().optional(),
+    currentQuantity: z.number().nullable().optional(),
+    purchaseDate: z.string().nullable().optional(),
+    nationalType: z.nativeEnum(NationalType).nullable().optional(),
+    description: z.string().nullable().optional(),
+    comments: z.string().nullable().optional(),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CreateAssetInput = z.infer<typeof createAssetSchema> & Record<string, any>;
 
 export type UpdateAssetInput = Partial<CreateAssetInput>;

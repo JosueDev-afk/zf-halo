@@ -10,19 +10,19 @@ import { ASSET_REPOSITORY } from '../domain/repositories/asset.repository.interf
 import { AuthModule } from './auth.module';
 
 @Module({
-    imports: [AuthModule],
-    controllers: [AssetController],
-    providers: [
-        CreateAssetUseCase,
-        UpdateAssetUseCase,
-        GetAssetsUseCase,
-        GetAssetByIdUseCase,
-        DeleteAssetUseCase,
-        {
-            provide: ASSET_REPOSITORY,
-            useClass: AssetPrismaRepository,
-        },
-    ],
-    exports: [GetAssetsUseCase, GetAssetByIdUseCase],
+  imports: [AuthModule],
+  controllers: [AssetController],
+  providers: [
+    CreateAssetUseCase,
+    UpdateAssetUseCase,
+    GetAssetsUseCase,
+    GetAssetByIdUseCase,
+    DeleteAssetUseCase,
+    {
+      provide: ASSET_REPOSITORY,
+      useClass: AssetPrismaRepository,
+    },
+  ],
+  exports: [GetAssetsUseCase, GetAssetByIdUseCase],
 })
-export class AssetsModule { }
+export class AssetsModule {}

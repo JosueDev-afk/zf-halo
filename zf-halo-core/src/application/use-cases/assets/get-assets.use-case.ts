@@ -1,18 +1,24 @@
 import { Injectable, Inject } from '@nestjs/common';
 import {
-    type IAssetRepository,
-    ASSET_REPOSITORY,
+  type IAssetRepository,
+  ASSET_REPOSITORY,
 } from '../../../domain/repositories/asset.repository.interface';
 import { Asset } from '../../../domain/entities/asset.entity';
+import { PaginationQueryDto } from '../../dtos/common/pagination-query.dto';
+import { PaginatedResult } from '../../dtos/common/paginated-result.dto';
 
 @Injectable()
 export class GetAssetsUseCase {
-    constructor(
-        @Inject(ASSET_REPOSITORY)
-        private readonly assetRepository: IAssetRepository,
-    ) { }
+  constructor(
+    @Inject(ASSET_REPOSITORY)
+    private readonly assetRepository: IAssetRepository,
+  ) {}
 
-    async execute(): Promise<Asset[]> {
-        return this.assetRepository.findAll();
-    }
+  async execute(query: PaginationQueryDto): Promise<PaginatedResult<Asset>> {
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    return this.assetRepository.findAll(skip, limit);
+  }
 }

@@ -1,6 +1,16 @@
 {
   "version": 1,
   "skills": {
+    "pwa-development": {
+      "source": "alinaqi/claude-bootstrap",
+      "sourceType": "github",
+      "computedHash": "0b8f1e6f78708bc73de3c1fa04c0ad0c3a698fa308fe0311f5078703ca4b6359"
+    },
+    "react-hook-form-zod": {
+      "source": "ovachiever/droid-tings",
+      "sourceType": "github",
+      "computedHash": "1ee0fc6e35b6b6973d6117657e644605a5646bd7e6c2d0c55f52ec073679ac65"
+    },
     "web-design-guidelines": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",

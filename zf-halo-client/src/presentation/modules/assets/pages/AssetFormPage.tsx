@@ -1,306 +1,689 @@
-import { useState, useMemo } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { motion } from "framer-motion"
-import { ArrowLeft } from "lucide-react"
-import { useNavigate, useParams } from "@tanstack/react-router"
-import { assetsApi } from "@/infrastructure/http/assets.api"
-import type { Asset, CreateAssetInput } from "@/domain/assets/models/asset.model"
-import {
-    MachineStatus as MachineStatusEnum,
-    MachineStatusLabel,
-    PurchaseType,
-    PurchaseTypeLabel,
-    NationalType,
-    NationalTypeLabel,
-} from "@/domain/assets/models/asset.model"
-import { toast } from "sonner"
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import type { z } from "zod";
 
-const defaultForm: CreateAssetInput = {
-    identifier: 0,
-    area: "",
-    subArea: "",
-    category: "",
-    projectName: "",
-    machineName: "",
-    tag: "",
-    serialNumber: "",
-    model: "",
-    brand: "",
-    commercialValue: 0,
-    purchaseType: PurchaseType.NATIONAL,
-    machineStatus: MachineStatusEnum.OPERATIVE,
-    isPurchased: false,
-}
+import { assetsApi } from "@/infrastructure/http/assets.api";
+import {
+  createAssetSchema,
+  type Asset,
+  type CreateAssetInput,
+} from "@/domain/assets/models/asset.model";
+import {
+  MachineStatus as MachineStatusEnum,
+  MachineStatusLabel,
+  PurchaseType,
+  PurchaseTypeLabel,
+  NationalType,
+  NationalTypeLabel,
+} from "@/domain/assets/models/asset.model";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/presentation/components/ui/form";
+import { Input } from "@/presentation/components/ui/input";
+import { Textarea } from "@/presentation/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/presentation/components/ui/select";
+import { Checkbox } from "@/presentation/components/ui/checkbox";
+import { Button } from "@/presentation/components/ui/button";
+import { Card, CardContent } from "@/presentation/components/ui/card";
+
+const defaultValues: Partial<z.input<typeof createAssetSchema>> = {
+  identifier: 0,
+  area: "",
+  subArea: "",
+  category: "",
+  projectName: "",
+  machineName: "",
+  tag: "",
+  serialNumber: "",
+  model: "",
+  brand: "",
+  commercialValue: 0,
+  purchaseType: PurchaseType.NATIONAL,
+  machineStatus: MachineStatusEnum.OPERATIVE,
+  isPurchased: false,
+};
 
 export default function AssetFormPage() {
-    const params = useParams({ strict: false }) as { id?: string }
-    const id = params.id
-    const navigate = useNavigate()
-    const queryClient = useQueryClient()
-    const isEdit = !!id
+  const params = useParams({ strict: false }) as { id?: string };
+  const id = params.id;
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const isEdit = !!id;
 
-    const [form, setForm] = useState<CreateAssetInput>(defaultForm)
-    const [formPopulated, setFormPopulated] = useState(false)
+  // Use strictly typed React Hook Form
+  const form = useForm<CreateAssetInput>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createAssetSchema as any),
+    defaultValues,
+  });
 
-    // Fetch existing asset for edit mode
-    const { data: existingAsset, isLoading } = useQuery<Asset>({
-        queryKey: ["assets", id],
-        queryFn: () => assetsApi.getAssetById(id!),
-        enabled: isEdit,
-    })
+  const watchPurchaseType = useWatch({
+    control: form.control,
+    name: "purchaseType",
+  });
 
-    // Populate form when asset data arrives (only once)
-    useMemo(() => {
-        if (!existingAsset || formPopulated) return
-        setForm({
-            identifier: existingAsset.identifier,
-            area: existingAsset.area,
-            subArea: existingAsset.subArea,
-            category: existingAsset.category,
-            initialQuantity: existingAsset.initialQuantity,
-            currentQuantity: existingAsset.currentQuantity,
-            projectName: existingAsset.projectName,
-            machineName: existingAsset.machineName,
-            tag: existingAsset.tag,
-            serialNumber: existingAsset.serialNumber,
-            model: existingAsset.model,
-            brand: existingAsset.brand,
-            year: existingAsset.year,
-            customsDocument: existingAsset.customsDocument,
-            invoice: existingAsset.invoice,
-            commercialValue: existingAsset.commercialValue,
-            purchaseDate: existingAsset.purchaseDate,
-            description: existingAsset.description,
-            comments: existingAsset.comments,
-            purchaseType: existingAsset.purchaseType,
-            nationalType: existingAsset.nationalType,
-            machineStatus: existingAsset.machineStatus,
-            isPurchased: existingAsset.isPurchased,
-        })
-        setFormPopulated(true)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [existingAsset])
+  // Fetch existing asset for edit mode
+  const { data: existingAsset, isLoading } = useQuery<Asset>({
+    queryKey: ["assets", id],
+    queryFn: () => assetsApi.getAssetById(id!),
+    enabled: isEdit,
+  });
 
-    const createMutation = useMutation({
-        mutationFn: (data: CreateAssetInput) => assetsApi.createAsset(data),
-        onSuccess: () => {
-            toast.success("Asset created")
-            void queryClient.invalidateQueries({ queryKey: ["assets"] })
-            void navigate({ to: "/assets" })
-        },
-        onError: () => toast.error("Failed to create asset"),
-    })
-
-    const updateMutation = useMutation({
-        mutationFn: (data: CreateAssetInput) => assetsApi.updateAsset(id!, data),
-        onSuccess: () => {
-            toast.success("Asset updated")
-            void queryClient.invalidateQueries({ queryKey: ["assets"] })
-            void navigate({ to: `/assets/${id}` })
-        },
-        onError: () => toast.error("Failed to update asset"),
-    })
-
-    const isSaving = createMutation.isPending || updateMutation.isPending
-
-    function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        if (isEdit) {
-            updateMutation.mutate(form)
-        } else {
-            createMutation.mutate(form)
-        }
+  // Populate form data when it loads
+  useEffect(() => {
+    if (existingAsset) {
+      form.reset({
+        identifier: existingAsset.identifier,
+        area: existingAsset.area,
+        subArea: existingAsset.subArea,
+        category: existingAsset.category,
+        initialQuantity: existingAsset.initialQuantity,
+        currentQuantity: existingAsset.currentQuantity,
+        projectName: existingAsset.projectName,
+        machineName: existingAsset.machineName,
+        tag: existingAsset.tag,
+        serialNumber: existingAsset.serialNumber,
+        model: existingAsset.model,
+        brand: existingAsset.brand,
+        year: existingAsset.year,
+        customsDocument: existingAsset.customsDocument,
+        invoice: existingAsset.invoice,
+        commercialValue: existingAsset.commercialValue,
+        purchaseDate: existingAsset.purchaseDate
+          ? new Date(existingAsset.purchaseDate).toISOString().split("T")[0]
+          : null,
+        description: existingAsset.description,
+        comments: existingAsset.comments,
+        purchaseType: existingAsset.purchaseType,
+        nationalType: existingAsset.nationalType,
+        machineStatus: existingAsset.machineStatus,
+        isPurchased: existingAsset.isPurchased,
+      });
     }
+  }, [existingAsset, form]);
 
-    function updateField(key: keyof CreateAssetInput, value: unknown) {
-        setForm(prev => ({ ...prev, [key]: value }))
+  const createMutation = useMutation({
+    mutationFn: (data: CreateAssetInput) => assetsApi.createAsset(data),
+    onSuccess: () => {
+      toast.success("Asset created");
+      void queryClient.invalidateQueries({ queryKey: ["assets"] });
+      void navigate({ to: "/assets" });
+    },
+    onError: () => toast.error("Failed to create asset"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: CreateAssetInput) => assetsApi.updateAsset(id!, data),
+    onSuccess: () => {
+      toast.success("Asset updated");
+      void queryClient.invalidateQueries({ queryKey: ["assets"] });
+      void navigate({ to: `/assets/${id}` });
+    },
+    onError: () => toast.error("Failed to update asset"),
+  });
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  function onSubmit(data: CreateAssetInput) {
+    // Prepare payload - convert empty strings to null for optional strings if needed
+    const payload: CreateAssetInput = {
+      ...data,
+      customsDocument: data.customsDocument || null,
+      invoice: data.invoice || null,
+      description: data.description || null,
+      comments: data.comments || null,
+    };
+
+    if (isEdit) {
+      updateMutation.mutate(payload);
+    } else {
+      createMutation.mutate(payload);
     }
+  }
 
-    if (isEdit && isLoading) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+  if (isEdit && isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container max-w-4xl px-4 py-8 md:py-12">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="mb-8 flex items-center gap-4"
+      >
+        <button
+          onClick={() =>
+            void navigate({ to: isEdit ? `/assets/${id}` : "/assets" })
+          }
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-card border text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {isEdit ? "Edit Asset" : "New Asset"}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isEdit
+              ? "Update the details of the selected asset."
+              : "Enter the details for the new asset."}
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Form */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Card className="border-border/50 shadow-sm backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-6 pb-2 border-b">
+                  Core Information
+                </h3>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="identifier"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Identifier</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? undefined
+                                  : Number(e.target.value),
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tag"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tag (QR Code)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter tag" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="machineName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Machine Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="E.g. Router CNC" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="projectName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Project X" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="brand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Brand name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="model"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Model</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Model number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="serialNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Serial Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="S/N" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="YYYY"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? null
+                                  : Number(e.target.value),
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="machineStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Machine Status</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.values(MachineStatusEnum).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {MachineStatusLabel[status]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 shadow-sm backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-6 pb-2 border-b">
+                  Classification & Location
+                </h3>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="area"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Area</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Main Area" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subArea"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sub Area</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Sub Area" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Category" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 shadow-sm backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-6 pb-2 border-b">
+                  Purchase Details
+                </h3>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="commercialValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Commercial Value</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? undefined
+                                  : Number(e.target.value),
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="purchaseDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purchase Date</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="purchaseType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purchase Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.values(PurchaseType).map((pt) => (
+                              <SelectItem key={pt} value={pt}>
+                                {PurchaseTypeLabel[pt]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {watchPurchaseType === PurchaseType.NATIONAL && (
+                    <FormField
+                      control={form.control}
+                      name="nationalType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>National Type</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value ?? undefined}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select national type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.values(NationalType).map((nt) => (
+                                <SelectItem key={nt} value={nt}>
+                                  {NationalTypeLabel[nt]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  <FormField
+                    control={form.control}
+                    name="customsDocument"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Customs Document</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Document ID"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="invoice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Invoice</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Invoice Number"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex items-end pb-3 sm:col-span-full">
+                    <FormField
+                      control={form.control}
+                      name="isPurchased"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg w-full">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Asset is fully purchased</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 shadow-sm backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-6 pb-2 border-b">
+                  Additional Info
+                </h3>
+                <div className="grid gap-6">
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="initialQuantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Initial Quantity</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="currentQuantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Current Quantity</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Add a detailed description..."
+                            className="resize-y"
+                            rows={3}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="comments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comments</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Additional comments or notes..."
+                            className="resize-y"
+                            rows={3}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Submit Actions */}
+            <div className="flex items-center justify-end gap-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  void navigate({ to: isEdit ? `/assets/${id}` : "/assets" })
+                }
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving} size="lg">
+                {isSaving ? (
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                ) : null}
+                {isEdit ? "Save Changes" : "Create Asset"}
+              </Button>
             </div>
-        )
-    }
-
-    const allStatuses = Object.values(MachineStatusEnum)
-
-    return (
-        <div className="container max-w-3xl px-4 py-6 md:py-10">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mb-6 flex items-center gap-3"
-            >
-                <button
-                    onClick={() => void navigate({ to: isEdit ? `/assets/${id}` : "/assets" })}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
-                    aria-label="Go back"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                </button>
-                <h1 className="text-xl font-bold tracking-tight">
-                    {isEdit ? "Edit Asset" : "New Asset"}
-                </h1>
-            </motion.div>
-
-            {/* Form */}
-            <motion.form
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                onSubmit={handleSubmit}
-                className="rounded-2xl border border-white/[0.1] bg-white/[0.05] p-5 backdrop-blur-sm"
-            >
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <FormInput label="Identifier" type="number" value={form.identifier} onChange={v => updateField("identifier", Number(v))} required />
-                    <FormInput label="Tag (QR Code)" value={form.tag} onChange={v => updateField("tag", v)} required />
-                    <FormInput label="Machine Name" value={form.machineName} onChange={v => updateField("machineName", v)} required />
-                    <FormInput label="Project Name" value={form.projectName} onChange={v => updateField("projectName", v)} required />
-                    <FormInput label="Brand" value={form.brand} onChange={v => updateField("brand", v)} required />
-                    <FormInput label="Model" value={form.model} onChange={v => updateField("model", v)} required />
-                    <FormInput label="Serial Number" value={form.serialNumber} onChange={v => updateField("serialNumber", v)} required />
-                    <FormInput label="Area" value={form.area} onChange={v => updateField("area", v)} required />
-                    <FormInput label="Sub Area" value={form.subArea} onChange={v => updateField("subArea", v)} required />
-                    <FormInput label="Category" value={form.category} onChange={v => updateField("category", v)} required />
-                    <FormInput label="Year" type="number" value={form.year ?? ""} onChange={v => updateField("year", v ? Number(v) : null)} />
-                    <FormInput label="Commercial Value" type="number" value={form.commercialValue} onChange={v => updateField("commercialValue", Number(v))} required />
-                    <FormInput label="Purchase Date" type="date" value={form.purchaseDate ?? ""} onChange={v => updateField("purchaseDate", v || null)} />
-                    <FormInput label="Customs Document" value={form.customsDocument ?? ""} onChange={v => updateField("customsDocument", v || null)} />
-                    <FormInput label="Invoice" value={form.invoice ?? ""} onChange={v => updateField("invoice", v || null)} />
-                    <FormInput label="Initial Quantity" type="number" value={form.initialQuantity ?? ""} onChange={v => updateField("initialQuantity", v ? Number(v) : null)} />
-                    <FormInput label="Current Quantity" type="number" value={form.currentQuantity ?? ""} onChange={v => updateField("currentQuantity", v ? Number(v) : null)} />
-
-                    {/* Selects */}
-                    <FormSelect
-                        label="Purchase Type"
-                        value={form.purchaseType}
-                        onChange={v => updateField("purchaseType", v)}
-                        options={Object.values(PurchaseType).map(v => ({ value: v, label: PurchaseTypeLabel[v] }))}
-                    />
-                    {form.purchaseType === PurchaseType.NATIONAL ? (
-                        <FormSelect
-                            label="National Type"
-                            value={form.nationalType ?? ""}
-                            onChange={v => updateField("nationalType", v || null)}
-                            options={[
-                                { value: "", label: "— None —" },
-                                ...Object.values(NationalType).map(v => ({ value: v, label: NationalTypeLabel[v] })),
-                            ]}
-                        />
-                    ) : null}
-                    <FormSelect
-                        label="Machine Status"
-                        value={form.machineStatus ?? MachineStatusEnum.OPERATIVE}
-                        onChange={v => updateField("machineStatus", v)}
-                        options={allStatuses.map(v => ({ value: v, label: MachineStatusLabel[v] }))}
-                    />
-
-                    {/* Purchased checkbox */}
-                    <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={form.isPurchased ?? false}
-                            onChange={e => updateField("isPurchased", e.target.checked)}
-                            className="h-4 w-4 rounded border-white/[0.1] bg-white/[0.03] text-primary focus:ring-primary/40"
-                        />
-                        Purchased
-                    </label>
-                </div>
-
-                {/* Text areas */}
-                <div className="mt-4 space-y-4">
-                    <FormTextarea label="Description" value={form.description ?? ""} onChange={v => updateField("description", v || null)} />
-                    <FormTextarea label="Comments" value={form.comments ?? ""} onChange={v => updateField("comments", v || null)} />
-                </div>
-
-                {/* Submit */}
-                <div className="mt-6 flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={() => void navigate({ to: isEdit ? `/assets/${id}` : "/assets" })}
-                        className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/[0.06]"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={isSaving}
-                        className="flex cursor-pointer items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
-                    >
-                        {isSaving ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                        ) : null}
-                        {isEdit ? "Save Changes" : "Create Asset"}
-                    </button>
-                </div>
-            </motion.form>
-        </div>
-    )
-}
-
-// ─── Sub-components ──────────────────────────────────
-
-function FormInput({
-    label, type = "text", value, onChange, required
-}: {
-    label: string; type?: string; value: string | number; onChange: (v: string) => void; required?: boolean
-}) {
-    return (
-        <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
-            <input
-                type={type}
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                required={required}
-                aria-label={label}
-                className="h-9 w-full rounded-lg border border-white/[0.1] bg-white/[0.06] px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-        </div>
-    )
-}
-
-function FormSelect({
-    label, value, onChange, options
-}: {
-    label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]
-}) {
-    return (
-        <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
-            <select
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                aria-label={label}
-                className="h-9 w-full rounded-lg border border-white/[0.1] bg-white/[0.06] px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-                {options.map(o => (
-                    <option key={o.value} value={o.value} className="bg-background">{o.label}</option>
-                ))}
-            </select>
-        </div>
-    )
-}
-
-function FormTextarea({
-    label, value, onChange
-}: {
-    label: string; value: string; onChange: (v: string) => void
-}) {
-    return (
-        <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
-            <textarea
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                rows={2}
-                aria-label={label}
-                className="w-full rounded-lg border border-white/[0.1] bg-white/[0.06] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-        </div>
-    )
+          </form>
+        </Form>
+      </motion.div>
+    </div>
+  );
 }
