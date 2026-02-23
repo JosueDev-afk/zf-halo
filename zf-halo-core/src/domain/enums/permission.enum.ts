@@ -11,6 +11,8 @@ export enum Permission {
   LOAN_EDIT = 'loan:edit',
   LOAN_APPROVE = 'loan:approve',
   LOAN_REJECT = 'loan:reject',
+  LOAN_CHECKOUT = 'loan:checkout',
+  LOAN_CHECKIN = 'loan:checkin',
 
   // Assets
   ASSET_VIEW = 'asset:view',

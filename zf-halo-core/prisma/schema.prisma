@@ -16,10 +16,10 @@ datasource db {
 
 /// User roles according to ZF-HALO requirements (22% rubric)
 enum Role {
-  USER      // Request loans, view catalog
-  MANAGER   // Approve team loans (Manager/Lead)
-  ADMIN     // Full asset and loan management (Asset Administrator)
-  AUDITOR   // Read-only access + export
+  USER // Request loans, view catalog
+  MANAGER // Approve team loans (Manager/Lead)
+  ADMIN // Full asset and loan management (Asset Administrator)
+  AUDITOR // Read-only access + export
 }
 
 // ==========================================
@@ -40,13 +40,14 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Future relations
-  // loans       Loan[]    @relation("RequestedLoans")
-  // approvedLoans Loan[]  @relation("ApprovedLoans")
+  loans         Loan[]                 @relation("RequestedLoans")
+  approvedLoans Loan[]                 @relation("ApprovedLoans")
+  notifications InternalNotification[]
 
-  @@map("users")
   @@index([email])
   @@index([role])
   @@index([isActive])
+  @@map("users")
 }
 
 /// Request for a new account (Pending Admin Approval)
@@ -61,9 +62,9 @@ model AccountRequest {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@map("account_requests")
   @@index([status])
   @@index([email])
+  @@map("account_requests")
 }
 
 // ==========================================
@@ -104,38 +105,116 @@ enum NationalType {
 
 /// Asset catalog based on ZF ADAS Excel columns
 model Asset {
-  id               String         @id @default(uuid())
-  identifier       Int            @unique
-  area             String
-  subArea          String         @map("sub_area")
-  category         String
-  initialQuantity  Int?           @map("initial_quantity")   // Only for spare parts
-  currentQuantity  Int?           @map("current_quantity")   // Only for spare parts
-  projectName      String         @map("project_name")
-  machineName      String         @map("machine_name")
-  tag              String         @unique                     // QR code
-  serialNumber     String         @unique @map("serial_number")
-  model            String
-  brand            String
-  year             Int?
-  customsDocument  String?        @map("customs_document")   // Pedimento
-  invoice          String?                                    // Factura
-  commercialValue  Decimal        @map("commercial_value")
-  purchaseDate     DateTime?      @map("purchase_date")
-  description      String?
-  comments         String?
-  purchaseType     PurchaseType   @map("purchase_type")
-  nationalType     NationalType?  @map("national_type")
-  machineStatus    MachineStatus  @default(OPERATIVE) @map("machine_status")
-  isPurchased      Boolean        @default(false) @map("is_purchased")
-  isActive         Boolean        @default(true) @map("is_active")
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
+  id              String        @id @default(uuid())
+  identifier      Int           @unique
+  area            String
+  subArea         String        @map("sub_area")
+  category        String
+  initialQuantity Int?          @map("initial_quantity") // Only for spare parts
+  currentQuantity Int?          @map("current_quantity") // Only for spare parts
+  projectName     String        @map("project_name")
+  machineName     String        @map("machine_name")
+  tag             String        @unique // QR code
+  serialNumber    String        @unique @map("serial_number")
+  model           String
+  brand           String
+  year            Int?
+  customsDocument String?       @map("customs_document") // Pedimento
+  invoice         String? // Factura
+  commercialValue Decimal       @map("commercial_value")
+  purchaseDate    DateTime?     @map("purchase_date")
+  description     String?
+  comments        String?
+  purchaseType    PurchaseType  @map("purchase_type")
+  nationalType    NationalType? @map("national_type")
+  machineStatus   MachineStatus @default(OPERATIVE) @map("machine_status")
+  assetType       AssetType     @default(SERIALIZED) @map("asset_type")
+  isPurchased     Boolean       @default(false) @map("is_purchased")
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  @@map("assets")
+  loans Loan[]
+
   @@index([tag])
   @@index([area])
   @@index([machineStatus])
   @@index([isActive])
   @@index([identifier])
+  @@map("assets")
+}
+
+// ==========================================
+// LOANS & NOTIFICATIONS ENUMS
+// ==========================================
+
+enum LoanStatus {
+  REQUESTED
+  AUTHORIZED
+  CHECKED_OUT
+  RETURNED
+}
+
+enum AssetType {
+  SERIALIZED
+  BULK
+}
+
+// ==========================================
+// LOANS & NOTIFICATIONS MODELS
+// ==========================================
+
+model Destination {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  loans     Loan[]
+
+  @@map("destinations")
+}
+
+model Loan {
+  id                  String     @id @default(uuid())
+  folio               String     @unique // SAL-2026-XXXX
+  status              LoanStatus @default(REQUESTED)
+  quantity            Int        @default(1) // >1 only for BULK
+  estimatedReturnDate DateTime   @map("estimated_return_date")
+  departureDate       DateTime?  @map("departure_date")
+  actualReturnDate    DateTime?  @map("actual_return_date")
+  comments            String?
+
+  // Relations
+  requesterId   String      @map("requester_id")
+  requester     User        @relation("RequestedLoans", fields: [requesterId], references: [id])
+  authorizerId  String?     @map("authorizer_id")
+  authorizer    User?       @relation("ApprovedLoans", fields: [authorizerId], references: [id])
+  assetId       String      @map("asset_id")
+  asset         Asset       @relation(fields: [assetId], references: [id])
+  destinationId String      @map("destination_id")
+  destination   Destination @relation(fields: [destinationId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([requesterId])
+  @@index([assetId])
+  @@index([folio])
+  @@map("loans")
+}
+
+model InternalNotification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  status    String   @default("UNREAD") // UNREAD, READ
+  type      String   @default("INFO") // INFO, ALERT, ESCALATION
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, status])
+  @@map("internal_notifications")
 }

@@ -40,6 +40,7 @@ function toDomain(
     purchaseType: record.purchaseType,
     nationalType: record.nationalType,
     machineStatus: record.machineStatus,
+    assetType: record.assetType,
     isPurchased: record.isPurchased,
     isActive: record.isActive,
     createdAt: record.createdAt,

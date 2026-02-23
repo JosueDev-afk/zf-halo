@@ -23,6 +23,6 @@ import { AuthModule } from './auth.module';
       useClass: AssetPrismaRepository,
     },
   ],
-  exports: [GetAssetsUseCase, GetAssetByIdUseCase],
+  exports: [GetAssetsUseCase, GetAssetByIdUseCase, ASSET_REPOSITORY],
 })
 export class AssetsModule {}

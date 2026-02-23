@@ -11,10 +11,12 @@ import {
   DollarSign,
   Pencil,
   Trash2,
+  PackagePlus,
 } from "lucide-react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useAuthStore } from "@/application/auth/auth.store";
 import { assetsApi } from "@/infrastructure/http/assets.api";
+import { useCreateLoan } from "@/application/loans/useLoans";
 import type { Asset } from "@/domain/assets/models/asset.model";
 import {
   MachineStatusLabel,
@@ -28,6 +30,14 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/presentation/components/ui/card";
+import { Input } from "@/presentation/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/presentation/components/ui/dialog";
 
 export default function AssetDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
@@ -36,6 +46,17 @@ export default function AssetDetailPage() {
   const user = useAuthStore((s) => s.user);
   const isManager = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
   const [showDelete, setShowDelete] = useState(false);
+  const [showLoanDialog, setShowLoanDialog] = useState(false);
+
+  // Loan Request Form State
+  const [loanDestination, setLoanDestination] = useState(
+    "fc1b52e2-6e9f-4444-a1a1-a20c5bf1bfbb",
+  ); // Mocked default
+  const [loanReturnDate, setLoanReturnDate] = useState("");
+  const [loanQuantity, setLoanQuantity] = useState(1);
+  const [loanComments, setLoanComments] = useState("");
+
+  const createLoanMutation = useCreateLoan();
 
   const { data: asset, isLoading } = useQuery<Asset>({
     queryKey: ["assets", id],
@@ -102,24 +123,125 @@ export default function AssetDetailPage() {
           </div>
         </div>
 
-        {isManager ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => void navigate({ to: `/assets/${asset.id}/edit` })}
-              className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-500/10 px-3.5 py-2 text-sm font-medium text-blue-400 ring-1 ring-blue-500/20 transition-all hover:bg-blue-500/20 active:scale-95"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </button>
-            <button
-              onClick={() => setShowDelete(true)}
-              className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-red-500/10 px-3.5 py-2 text-sm font-medium text-red-400 ring-1 ring-red-500/20 transition-all hover:bg-red-500/20 active:scale-95"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </button>
-          </div>
-        ) : null}
+        <div className="flex items-center gap-2">
+          <Dialog open={showLoanDialog} onOpenChange={setShowLoanDialog}>
+            <DialogTrigger asChild>
+              <button className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-purple-500/10 px-3.5 py-2 text-sm font-medium text-purple-400 ring-1 ring-purple-500/20 transition-all hover:bg-purple-500/20 active:scale-95">
+                <PackagePlus className="h-3.5 w-3.5" />
+                Request Loan
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md border-white/[0.08] bg-black shadow-2xl">
+              <DialogHeader>
+                <DialogTitle>Request {asset.machineName}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Destination ID</label>
+                  <Input
+                    value={loanDestination}
+                    onChange={(e) => setLoanDestination(e.target.value)}
+                    placeholder="Destination UUID"
+                    className="bg-white/[0.04] border-white/[0.08]"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">
+                    Expected Return Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={loanReturnDate}
+                    onChange={(e) => setLoanReturnDate(e.target.value)}
+                    className="bg-white/[0.04] border-white/[0.08]"
+                    min={new Date().toISOString().split("T")[0]}
+                  />
+                </div>
+                {asset.assetType === "BULK" && (
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Quantity</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={asset.currentQuantity ?? 999}
+                      value={loanQuantity}
+                      onChange={(e) =>
+                        setLoanQuantity(parseInt(e.target.value) || 1)
+                      }
+                      className="bg-white/[0.04] border-white/[0.08]"
+                    />
+                  </div>
+                )}
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Comments</label>
+                  <Input
+                    value={loanComments}
+                    onChange={(e) => setLoanComments(e.target.value)}
+                    placeholder="Reason for loan..."
+                    className="bg-white/[0.04] border-white/[0.08]"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowLoanDialog(false)}
+                  className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-white/[0.06]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!loanReturnDate || !loanDestination) {
+                      toast.error("Please fill all required fields");
+                      return;
+                    }
+                    createLoanMutation.mutate(
+                      {
+                        assetId: asset.id,
+                        destinationId: loanDestination,
+                        estimatedReturnDate: new Date(
+                          loanReturnDate,
+                        ).toISOString(),
+                        quantity: asset.assetType === "BULK" ? loanQuantity : 1,
+                        comments: loanComments,
+                      },
+                      {
+                        onSuccess: () => setShowLoanDialog(false),
+                      },
+                    );
+                  }}
+                  disabled={createLoanMutation.isPending}
+                  className="cursor-pointer rounded-xl bg-purple-500 hover:bg-purple-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {createLoanMutation.isPending
+                    ? "Submitting..."
+                    : "Submit Request"}
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {isManager ? (
+            <>
+              <button
+                onClick={() =>
+                  void navigate({ to: `/assets/${asset.id}/edit` })
+                }
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-500/10 px-3.5 py-2 text-sm font-medium text-blue-400 ring-1 ring-blue-500/20 transition-all hover:bg-blue-500/20 active:scale-95"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+              <button
+                onClick={() => setShowDelete(true)}
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-red-500/10 px-3.5 py-2 text-sm font-medium text-red-400 ring-1 ring-red-500/20 transition-all hover:bg-red-500/20 active:scale-95"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </>
+          ) : null}
+        </div>
       </motion.div>
 
       {/* Status + ID header */}
