@@ -43,6 +43,9 @@ export interface User {
   lastName: string;
   role: Role;
   company?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationName?: string | null;
   isActive: boolean;
   createdAt: string;
 }

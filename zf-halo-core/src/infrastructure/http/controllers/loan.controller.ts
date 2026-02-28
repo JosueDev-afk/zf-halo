@@ -24,7 +24,7 @@ import { CreateLoanDto } from '../../../application/dtos/loan/create-loan.dto';
 import { AuthorizeLoanDto } from '../../../application/dtos/loan/authorize-loan.dto';
 import { CheckOutLoanDto } from '../../../application/dtos/loan/checkout-loan.dto';
 import { CheckInLoanDto } from '../../../application/dtos/loan/checkin-loan.dto';
-import { PaginationQueryDto } from '../../../application/dtos/common/pagination-query.dto';
+import { GetLoansQueryDto } from '../../../application/dtos/loan/get-loans-query.dto';
 
 @ApiTags('Loans')
 @ApiBearerAuth()
@@ -44,18 +44,21 @@ export class LoanController {
   @RequirePermissions(Permission.LOAN_REQUEST)
   @ApiOperation({ summary: 'Request a new loan' })
   async requestLoan(@Req() req: any, @Body() dto: CreateLoanDto) {
-    return this.requestLoanUseCase.execute(req.user.id, dto);
+    return this.requestLoanUseCase.execute(req.user.id, dto, req.user.role);
   }
 
   @Get()
   @RequirePermissions(Permission.LOAN_VIEW_OWN)
   @ApiOperation({ summary: 'List loans (filtered by role internally)' })
-  async getLoans(@Req() req: any, @Query() query: PaginationQueryDto) {
-    const filters: any = {};
+  async getLoans(@Req() req: any, @Query() query: GetLoansQueryDto) {
+    const filters: Record<string, string> = {};
     if (req.user.role === 'USER') {
       filters.requesterId = req.user.id;
     }
-    // Implement DEPT logic if needed later
+    if (query.status) filters.status = query.status;
+    if (query.requesterId && req.user.role !== 'USER') {
+      filters.requesterId = query.requesterId;
+    }
     return this.getLoansUseCase.execute(query, filters);
   }
 

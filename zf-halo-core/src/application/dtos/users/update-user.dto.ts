@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+  IsNumber,
+} from 'class-validator';
 import * as userEntity from '../../../domain/entities/user.entity';
 
 export class UpdateUserDto {
@@ -35,4 +41,16 @@ export class UpdateUserProfileDto {
   @IsOptional()
   @IsString()
   company?: string;
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  locationName?: string;
 }

@@ -28,12 +28,14 @@ export function useCreateLoan() {
   return useMutation({
     mutationFn: (data: CreateLoanDto) => loansApi.createLoan(data),
     onSuccess: () => {
-      toast.success("Loan requested successfully");
-      queryClient.invalidateQueries({ queryKey: ["loans"] });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      toast.success("Solicitud de préstamo creada");
+      queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["assets"], exact: false });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to request loan");
+      toast.error(
+        error.response?.data?.message || "Error al crear la solicitud",
+      );
     },
   });
 }
@@ -44,11 +46,13 @@ export function useAuthorizeLoan() {
     mutationFn: ({ id, data }: { id: string; data: AuthorizeLoanDto }) =>
       loansApi.authorizeLoan(id, data),
     onSuccess: () => {
-      toast.success("Loan authorized");
-      queryClient.invalidateQueries({ queryKey: ["loans"] });
+      toast.success("Préstamo autorizado correctamente");
+      queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to authorize loan");
+      toast.error(
+        error.response?.data?.message || "Error al autorizar el préstamo",
+      );
     },
   });
 }
@@ -59,12 +63,14 @@ export function useCheckoutLoan() {
     mutationFn: ({ id, data }: { id: string; data: CheckOutLoanDto }) =>
       loansApi.checkoutLoan(id, data),
     onSuccess: () => {
-      toast.success("Asset checked out successfully");
-      queryClient.invalidateQueries({ queryKey: ["loans"] });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      toast.success("Activo entregado al solicitante");
+      queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["assets"], exact: false });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to check out asset");
+      toast.error(
+        error.response?.data?.message || "Error al entregar el activo",
+      );
     },
   });
 }
@@ -75,12 +81,14 @@ export function useCheckinLoan() {
     mutationFn: ({ id, data }: { id: string; data: CheckInLoanDto }) =>
       loansApi.checkinLoan(id, data),
     onSuccess: () => {
-      toast.success("Asset returned successfully");
-      queryClient.invalidateQueries({ queryKey: ["loans"] });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      toast.success("Activo devuelto al inventario");
+      queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["assets"], exact: false });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to return asset");
+      toast.error(
+        error.response?.data?.message || "Error al registrar la devolución",
+      );
     },
   });
 }

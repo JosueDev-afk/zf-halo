@@ -12,14 +12,18 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     Permission.ASSET_VIEW,
   ],
   [Role.MANAGER]: [
+    Permission.LOAN_VIEW_OWN,
     Permission.LOAN_VIEW_DEPT,
+    Permission.LOAN_REQUEST,
     Permission.LOAN_APPROVE,
     Permission.LOAN_REJECT,
     Permission.ASSET_VIEW,
     Permission.ASSET_MANAGE,
   ],
   [Role.ADMIN]: [
+    Permission.LOAN_VIEW_OWN,
     Permission.LOAN_VIEW_ALL,
+    Permission.LOAN_REQUEST,
     Permission.LOAN_EDIT,
     Permission.LOAN_APPROVE,
     Permission.LOAN_REJECT,

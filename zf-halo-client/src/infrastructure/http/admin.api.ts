@@ -18,10 +18,14 @@ export interface AccountRequest {
 
 export const adminApi = {
   /** GET /users — list all users (Admin only) */
-  async getUsers(query?: PaginationQuery): Promise<PaginatedResult<User>> {
+  async getUsers(
+    query?: PaginationQuery & { search?: string; role?: string },
+  ): Promise<PaginatedResult<User>> {
     const params = new URLSearchParams();
     if (query?.page) params.append("page", query.page.toString());
     if (query?.limit) params.append("limit", query.limit.toString());
+    if (query?.search?.trim()) params.append("search", query.search.trim());
+    if (query?.role) params.append("role", query.role);
 
     const res: AxiosResponse<PaginatedResult<User>> = await apiClient.get(
       `/users?${params.toString()}`,

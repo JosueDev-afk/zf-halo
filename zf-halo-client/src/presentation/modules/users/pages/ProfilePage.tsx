@@ -1,12 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { LogOut, Mail, Shield, Calendar, Loader2 } from "lucide-react";
+import { LogOut, Mail, Shield, Calendar, Loader2, MapPin } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  LocationPicker,
+  type LocationValue,
+} from "@/presentation/components/LocationPicker";
 
 import { useAuthStore } from "@/application/auth/auth.store";
 import {
@@ -37,6 +41,15 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function ProfilePage() {
   const { user, setUser, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [location, setLocation] = useState<LocationValue | null>(
+    user?.latitude && user?.longitude
+      ? {
+          lat: user.latitude,
+          lng: user.longitude,
+          displayName: user.locationName ?? "",
+        }
+      : null,
+  );
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -61,10 +74,10 @@ export default function ProfilePage() {
     mutationFn: (data: UpdateUserProfileInput) => usersApi.updateProfile(data),
     onSuccess: (updatedUser) => {
       setUser(updatedUser);
-      toast.success("Profile updated successfully");
+      toast.success("Perfil actualizado correctamente");
     },
     onError: () => {
-      toast.error("Failed to update profile");
+      toast.error("Error al actualizar el perfil");
     },
   });
 
@@ -87,6 +100,9 @@ export default function ProfilePage() {
     const payload: UpdateUserProfileInput = {
       ...data,
       company: data.company || undefined,
+      latitude: location?.lat ?? null,
+      longitude: location?.lng ?? null,
+      locationName: location?.displayName ?? null,
     };
     updateMutation.mutate(payload);
   }
@@ -106,9 +122,9 @@ export default function ProfilePage() {
             {user.lastName.charAt(0)}
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Your Profile</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Mi Perfil</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your personal information
+              Administra tu información personal
             </p>
           </div>
         </div>
@@ -118,7 +134,7 @@ export default function ProfilePage() {
           className="gap-2 rounded-xl transition-all duration-200 active:scale-95 shadow-sm shadow-destructive/20"
         >
           <LogOut className="h-4 w-4" />
-          Logout
+          Cerrar sesión
         </Button>
       </motion.div>
 
@@ -135,24 +151,24 @@ export default function ProfilePage() {
               <div>
                 <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  Email Address
+                  Correo electrónico
                 </label>
                 <div className="text-sm font-medium">{user.email}</div>
               </div>
               <div>
                 <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  Role
+                  Rol
                 </label>
                 <div className="text-sm font-medium">{user.role}</div>
               </div>
               <div>
                 <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  Member Since
+                  Miembro desde
                 </label>
                 <div className="text-sm font-medium">
-                  {new Intl.DateTimeFormat("en-US", {
+                  {new Intl.DateTimeFormat("es-MX", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -175,7 +191,7 @@ export default function ProfilePage() {
             <Card className="border-border/50 shadow-sm backdrop-blur-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-6 pb-2 border-b">
-                  Personal Details
+                  Datos personales
                 </h3>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
@@ -183,10 +199,10 @@ export default function ProfilePage() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>First Name</FormLabel>
+                        <FormLabel>Nombre</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="John"
+                            placeholder="Juan"
                             autoComplete="given-name"
                             {...field}
                           />
@@ -200,10 +216,10 @@ export default function ProfilePage() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name</FormLabel>
+                        <FormLabel>Apellido</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Doe"
+                            placeholder="García"
                             autoComplete="family-name"
                             {...field}
                           />
@@ -217,7 +233,7 @@ export default function ProfilePage() {
                     name="company"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-2">
-                        <FormLabel>Company (Optional)</FormLabel>
+                        <FormLabel>Empresa (Opcional)</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Acme Corp"
@@ -233,18 +249,33 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
+            {/* Company Location */}
+            <Card className="border-border/50 shadow-sm backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-2 pb-2 border-b flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  Ubicación de la Empresa
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Piná la ubicación de tu empresa para usarla al crear
+                  solicitudes de préstamo.
+                </p>
+                <LocationPicker value={location} onChange={setLocation} />
+              </CardContent>
+            </Card>
+
             {/* Submit Actions */}
             <div className="flex items-center justify-end pt-2">
               <Button
                 type="submit"
-                disabled={isSaving || !form.formState.isDirty}
+                disabled={isSaving}
                 size="lg"
                 className="shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
               >
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Save Changes
+                Guardar cambios
               </Button>
             </div>
           </form>

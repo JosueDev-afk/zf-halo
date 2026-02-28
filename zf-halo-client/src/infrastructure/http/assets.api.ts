@@ -11,11 +11,18 @@ import type {
 
 export const assetsApi = {
   getAssets: async (
-    query?: PaginationQuery,
+    query?: PaginationQuery & {
+      search?: string;
+      status?: string;
+      category?: string;
+    },
   ): Promise<PaginatedResult<Asset>> => {
     const params = new URLSearchParams();
     if (query?.page) params.append("page", query.page.toString());
     if (query?.limit) params.append("limit", query.limit.toString());
+    if (query?.search?.trim()) params.append("search", query.search.trim());
+    if (query?.status) params.append("status", query.status);
+    if (query?.category) params.append("category", query.category);
 
     const { data } = await apiClient.get<PaginatedResult<Asset>>(
       `/assets?${params.toString()}`,
@@ -41,5 +48,12 @@ export const assetsApi = {
   deleteAsset: async (id: string): Promise<Asset> => {
     const { data } = await apiClient.delete<Asset>(`/assets/${id}`);
     return data;
+  },
+
+  getAssetByTag: async (tag: string): Promise<Asset | null> => {
+    const { data } = await apiClient.get<PaginatedResult<Asset>>(
+      `/assets?tag=${encodeURIComponent(tag)}&limit=1`,
+    );
+    return data.items?.[0] ?? null;
   },
 };

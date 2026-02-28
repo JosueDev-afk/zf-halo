@@ -5,6 +5,12 @@ import {
 } from '../entities/asset.entity';
 import { PaginatedResult } from '../../application/dtos/common/paginated-result.dto';
 
+export interface AssetFilters {
+  search?: string;
+  status?: string;
+  category?: string;
+}
+
 /**
  * Repository Interface (Port): IAssetRepository
  * Defines the contract for asset persistence operations.
@@ -12,9 +18,13 @@ import { PaginatedResult } from '../../application/dtos/common/paginated-result.
  */
 export interface IAssetRepository {
   /**
-   * Find all active assets with pagination
+   * Find all active assets with pagination and optional filters
    */
-  findAll(skip?: number, take?: number): Promise<PaginatedResult<Asset>>;
+  findAll(
+    skip?: number,
+    take?: number,
+    filters?: AssetFilters,
+  ): Promise<PaginatedResult<Asset>>;
 
   /**
    * Find an asset by its unique ID

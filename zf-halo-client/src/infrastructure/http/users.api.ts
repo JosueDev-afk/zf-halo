@@ -10,6 +10,9 @@ export interface UpdateUserProfileInput {
   firstName?: string;
   lastName?: string;
   company?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationName?: string | null;
 }
 
 export interface UpdateUserInput {

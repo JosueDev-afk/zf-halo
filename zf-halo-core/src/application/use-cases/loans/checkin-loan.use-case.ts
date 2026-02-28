@@ -2,6 +2,8 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { ILoanRepository } from '../../../domain/repositories/loan.repository.interface';
 import { LOAN_REPOSITORY } from '../../../domain/repositories/loan.repository.interface';
+import type { IAssetRepository } from '../../../domain/repositories/asset.repository.interface';
+import { ASSET_REPOSITORY } from '../../../domain/repositories/asset.repository.interface';
 import { LoanStateMachineService } from '../../../domain/services/loan-state-machine.service';
 import { CheckInLoanDto } from '../../dtos/loan/checkin-loan.dto';
 import { Loan } from '../../../domain/entities/loan.entity';
@@ -10,6 +12,8 @@ import { Loan } from '../../../domain/entities/loan.entity';
 export class CheckInLoanUseCase {
   constructor(
     @Inject(LOAN_REPOSITORY) private readonly loanRepository: ILoanRepository,
+    @Inject(ASSET_REPOSITORY)
+    private readonly assetRepository: IAssetRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -27,6 +31,20 @@ export class CheckInLoanUseCase {
     const updatedLoan = await this.loanRepository.checkin(loanId, new Date(), {
       comments: combinedComments,
     });
+
+    // ── Restore asset stock on return ────────────────────────────────────────
+    const asset = await this.assetRepository.findById(loan.assetId);
+    if (asset) {
+      if (asset.assetType === 'BULK') {
+        await this.assetRepository.update(asset.id, {
+          currentQuantity: (asset.currentQuantity ?? 0) + (loan.quantity ?? 1),
+        });
+      } else {
+        await this.assetRepository.update(asset.id, {
+          machineStatus: 'OPERATIVE',
+        });
+      }
+    }
 
     this.eventEmitter.emit('loan.status.changed', {
       loanId: updatedLoan.id,

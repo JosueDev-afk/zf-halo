@@ -24,7 +24,7 @@ import { GetAssetByIdUseCase } from '../../../application/use-cases/assets/get-a
 import { DeleteAssetUseCase } from '../../../application/use-cases/assets/delete-asset.use-case';
 import { CreateAssetDto } from '../../../application/dtos/asset/create-asset.dto';
 import { UpdateAssetDto } from '../../../application/dtos/asset/update-asset.dto';
-import { PaginationQueryDto } from '../../../application/dtos/common/pagination-query.dto';
+import { GetAssetsQueryDto } from '../../../application/dtos/asset/get-assets-query.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { RequirePermissions } from '../decorators/permissions.decorator';
@@ -47,7 +47,7 @@ export class AssetController {
   @RequirePermissions(Permission.ASSET_VIEW)
   @ApiOperation({ summary: 'List all active assets' })
   @ApiResponse({ status: 200, description: 'Paginated list of active assets' })
-  async findAll(@Query() query: PaginationQueryDto) {
+  async findAll(@Query() query: GetAssetsQueryDto) {
     return this.getAssetsUseCase.execute(query);
   }
 

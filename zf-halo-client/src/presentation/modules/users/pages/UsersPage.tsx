@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, Search, Shield, Mail, Eye, Pencil } from "lucide-react";
@@ -9,6 +9,7 @@ import { adminApi } from "@/infrastructure/http/admin.api";
 import { useAuthStore } from "@/application/auth/auth.store";
 import { useDebounce } from "use-debounce";
 import { cn } from "@/lib/utils";
+import { Paginator } from "@/presentation/components/ui/Paginator";
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -21,29 +22,26 @@ export default function UsersPage() {
 
   const [debouncedSearch] = useDebounce(search, 500);
 
+  // Reset to first page when search changes
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
+
   const { data: result, isLoading: loading } = useQuery({
     queryKey: ["users", currentPage, itemsPerPage, debouncedSearch],
     queryFn: () =>
-      adminApi.getUsers({ page: currentPage, limit: itemsPerPage }),
+      adminApi.getUsers({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearch || undefined,
+      }),
+    placeholderData: (prev) => prev,
   });
 
-  const users = useMemo(() => {
-    if (!result?.items) return [];
-    if (!debouncedSearch) return result.items;
-
-    return result.items.filter((u) =>
-      `${u.firstName} ${u.lastName} ${u.email}`
-        .toLowerCase()
-        .includes(debouncedSearch.toLowerCase()),
-    );
-  }, [result, debouncedSearch]);
-
-  const totalPages = result?.pages || 1;
-  const totalItems = result?.total || 0;
-
-  if (currentPage > totalPages && totalPages > 0 && currentPage !== 1) {
-    setCurrentPage(1);
-  }
+  const users = result?.items ?? [];
+  const totalPages = result?.pages ?? 1;
+  const totalItems = result?.total ?? 0;
 
   const roleBadgeColor: Record<string, string> = {
     [Role.ADMIN]: "bg-red-500/15 text-red-500 ring-red-500/20",
@@ -80,7 +78,7 @@ export default function UsersPage() {
             type="text"
             placeholder="Search by name, email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="h-11 w-full rounded-xl border border-border/50 bg-white/[0.03] pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground backdrop-blur-md transition-all focus:border-primary/50 focus:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-primary/10"
           />
         </div>
@@ -250,63 +248,14 @@ export default function UsersPage() {
             </table>
           </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-border/30 bg-white/[0.01] px-6 py-4">
-              <span className="text-sm text-muted-foreground">
-                Showing{" "}
-                <span className="font-medium text-foreground">
-                  {(currentPage - 1) * itemsPerPage + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium text-foreground">
-                  {Math.min(currentPage * itemsPerPage, totalItems)}
-                </span>{" "}
-                of{" "}
-                <span className="font-medium text-foreground">
-                  {totalItems}
-                </span>{" "}
-                results
-              </span>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="flex h-8 cursor-pointer items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={cn(
-                          "flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-sm font-medium transition-colors",
-                          currentPage === page
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:bg-white/[0.08] hover:text-foreground",
-                        )}
-                      >
-                        {page}
-                      </button>
-                    ),
-                  )}
-                </div>
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="flex h-8 cursor-pointer items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <Paginator
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            className="border-t-0 rounded-t-none"
+          />
         </div>
       )}
     </div>

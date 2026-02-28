@@ -10,6 +10,9 @@ export interface User {
   readonly firstName: string;
   readonly lastName: string;
   readonly company?: string;
+  readonly latitude?: number | null;
+  readonly longitude?: number | null;
+  readonly locationName?: string | null;
   readonly role: UserRole;
   readonly isActive: boolean;
   readonly createdAt: Date;
@@ -30,5 +33,9 @@ export interface CreateUserData {
   firstName: string;
   lastName: string;
   company?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationName?: string | null;
   role?: UserRole;
+  isActive?: boolean;
 }

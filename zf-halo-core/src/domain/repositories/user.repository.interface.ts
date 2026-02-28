@@ -1,6 +1,11 @@
 import { User, CreateUserData } from '../entities/user.entity';
 import { PaginatedResult } from '../../application/dtos/common/paginated-result.dto';
 
+export interface UserFilters {
+  search?: string;
+  role?: string;
+}
+
 /**
  * Repository Interface (Port): IUserRepository
  * Defines the contract for user persistence operations.
@@ -18,9 +23,13 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<User | null>;
 
   /**
-   * Find all users with pagination
+   * Find all users with pagination and optional filters
    */
-  findAll(skip?: number, take?: number): Promise<PaginatedResult<User>>;
+  findAll(
+    skip?: number,
+    take?: number,
+    filters?: UserFilters,
+  ): Promise<PaginatedResult<User>>;
 
   /**
    * Create a new user in the persistence layer

@@ -95,9 +95,38 @@ const assetEditRoute = createRoute({
 const loansRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/loans",
+  beforeLoad: requireAuth(),
+  loader: () => {
+    throw redirect({ to: "/loans/active" });
+  },
+  component: () => null,
+});
+
+const loansActiveRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/loans/active",
   component: lazyRouteComponent(
-    () => import("./modules/loans/pages/LoansPage"),
+    () => import("./modules/loans/pages/ActiveLoansPage"),
   ),
+  beforeLoad: requireAuth(),
+});
+
+const loansPendingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/loans/pending",
+  component: lazyRouteComponent(
+    () => import("./modules/loans/pages/PendingLoansPage"),
+  ),
+  beforeLoad: requireAuth(),
+});
+
+const loansHistoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/loans/history",
+  component: lazyRouteComponent(
+    () => import("./modules/loans/pages/LoansHistoryPage"),
+  ),
+  beforeLoad: requireAuth(),
 });
 
 const profileRoute = createRoute({
@@ -161,6 +190,9 @@ const routeTree = rootRoute.addChildren([
   assetDetailRoute,
   assetEditRoute,
   loansRoute,
+  loansActiveRoute,
+  loansPendingRoute,
+  loansHistoryRoute,
   profileRoute,
   usersRoute,
   userDetailRoute,

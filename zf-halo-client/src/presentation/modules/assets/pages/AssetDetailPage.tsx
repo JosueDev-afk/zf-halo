@@ -16,7 +16,6 @@ import {
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useAuthStore } from "@/application/auth/auth.store";
 import { assetsApi } from "@/infrastructure/http/assets.api";
-import { useCreateLoan } from "@/application/loans/useLoans";
 import type { Asset } from "@/domain/assets/models/asset.model";
 import {
   MachineStatusLabel,
@@ -30,14 +29,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/presentation/components/ui/card";
-import { Input } from "@/presentation/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/presentation/components/ui/dialog";
+import { LoanRequestSheet } from "@/presentation/modules/loans/LoanRequestSheet";
 
 export default function AssetDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
@@ -46,17 +38,7 @@ export default function AssetDetailPage() {
   const user = useAuthStore((s) => s.user);
   const isManager = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
   const [showDelete, setShowDelete] = useState(false);
-  const [showLoanDialog, setShowLoanDialog] = useState(false);
-
-  // Loan Request Form State
-  const [loanDestination, setLoanDestination] = useState(
-    "fc1b52e2-6e9f-4444-a1a1-a20c5bf1bfbb",
-  ); // Mocked default
-  const [loanReturnDate, setLoanReturnDate] = useState("");
-  const [loanQuantity, setLoanQuantity] = useState(1);
-  const [loanComments, setLoanComments] = useState("");
-
-  const createLoanMutation = useCreateLoan();
+  const [showLoanSheet, setShowLoanSheet] = useState(false);
 
   const { data: asset, isLoading } = useQuery<Asset>({
     queryKey: ["assets", id],
@@ -67,11 +49,14 @@ export default function AssetDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: (assetId: string) => assetsApi.deleteAsset(assetId),
     onSuccess: () => {
-      toast.success("Asset deleted");
-      void queryClient.invalidateQueries({ queryKey: ["assets"] });
+      toast.success("Activo eliminado");
+      void queryClient.invalidateQueries({
+        queryKey: ["assets"],
+        exact: false,
+      });
       void navigate({ to: "/assets" });
     },
-    onError: () => toast.error("Failed to delete asset"),
+    onError: () => toast.error("Error al eliminar el activo"),
   });
 
   if (isLoading) {
@@ -85,12 +70,12 @@ export default function AssetDetailPage() {
   if (!asset) {
     return (
       <div className="container max-w-3xl px-4 py-10 text-center">
-        <p className="text-muted-foreground">Asset not found</p>
+        <p className="text-muted-foreground">Activo no encontrado</p>
         <button
           onClick={() => void navigate({ to: "/assets" })}
           className="mt-4 text-sm text-primary hover:underline"
         >
-          ← Back to Assets
+          ← Volver a Activos
         </button>
       </div>
     );
@@ -124,102 +109,14 @@ export default function AssetDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Dialog open={showLoanDialog} onOpenChange={setShowLoanDialog}>
-            <DialogTrigger asChild>
-              <button className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-purple-500/10 px-3.5 py-2 text-sm font-medium text-purple-400 ring-1 ring-purple-500/20 transition-all hover:bg-purple-500/20 active:scale-95">
-                <PackagePlus className="h-3.5 w-3.5" />
-                Request Loan
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md border-white/[0.08] bg-black shadow-2xl">
-              <DialogHeader>
-                <DialogTitle>Request {asset.machineName}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Destination ID</label>
-                  <Input
-                    value={loanDestination}
-                    onChange={(e) => setLoanDestination(e.target.value)}
-                    placeholder="Destination UUID"
-                    className="bg-white/[0.04] border-white/[0.08]"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">
-                    Expected Return Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={loanReturnDate}
-                    onChange={(e) => setLoanReturnDate(e.target.value)}
-                    className="bg-white/[0.04] border-white/[0.08]"
-                    min={new Date().toISOString().split("T")[0]}
-                  />
-                </div>
-                {asset.assetType === "BULK" && (
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Quantity</label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={asset.currentQuantity ?? 999}
-                      value={loanQuantity}
-                      onChange={(e) =>
-                        setLoanQuantity(parseInt(e.target.value) || 1)
-                      }
-                      className="bg-white/[0.04] border-white/[0.08]"
-                    />
-                  </div>
-                )}
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Comments</label>
-                  <Input
-                    value={loanComments}
-                    onChange={(e) => setLoanComments(e.target.value)}
-                    placeholder="Reason for loan..."
-                    className="bg-white/[0.04] border-white/[0.08]"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowLoanDialog(false)}
-                  className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-white/[0.06]"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (!loanReturnDate || !loanDestination) {
-                      toast.error("Please fill all required fields");
-                      return;
-                    }
-                    createLoanMutation.mutate(
-                      {
-                        assetId: asset.id,
-                        destinationId: loanDestination,
-                        estimatedReturnDate: new Date(
-                          loanReturnDate,
-                        ).toISOString(),
-                        quantity: asset.assetType === "BULK" ? loanQuantity : 1,
-                        comments: loanComments,
-                      },
-                      {
-                        onSuccess: () => setShowLoanDialog(false),
-                      },
-                    );
-                  }}
-                  disabled={createLoanMutation.isPending}
-                  className="cursor-pointer rounded-xl bg-purple-500 hover:bg-purple-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  {createLoanMutation.isPending
-                    ? "Submitting..."
-                    : "Submit Request"}
-                </button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* Request Loan — opens bottom sheet */}
+          <button
+            onClick={() => setShowLoanSheet(true)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary/10 px-3.5 py-2 text-sm font-medium text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/20 active:scale-95"
+          >
+            <PackagePlus className="h-3.5 w-3.5" />
+            Solicitar Préstamo
+          </button>
 
           {isManager ? (
             <>
@@ -428,22 +325,22 @@ export default function AssetDetailPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-background p-6 text-center shadow-2xl"
+              className="w-full max-w-sm rounded-2xl border border-border bg-background p-6 text-center shadow-2xl"
             >
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/15">
                 <Trash2 className="h-6 w-6 text-red-400" />
               </div>
-              <h3 className="mb-2 font-semibold">Delete Asset</h3>
+              <h3 className="mb-2 font-semibold">Eliminar Activo</h3>
               <p className="mb-6 text-sm text-muted-foreground">
-                Are you sure you want to delete{" "}
+                ¿Estas seguro de que deseas eliminar{" "}
                 <strong>{asset.machineName}</strong>?
               </p>
               <div className="flex justify-center gap-3">
                 <button
                   onClick={() => setShowDelete(false)}
-                  className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/[0.06]"
+                  className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   onClick={() => deleteMutation.mutate(asset.id)}
@@ -453,13 +350,20 @@ export default function AssetDetailPage() {
                   {deleteMutation.isPending ? (
                     <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
                   ) : null}
-                  Delete
+                  Eliminar
                 </button>
               </div>
             </motion.div>
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {/* Loan Request Bottom Sheet */}
+      <LoanRequestSheet
+        open={showLoanSheet}
+        onClose={() => setShowLoanSheet(false)}
+        preselectedAsset={asset}
+      />
     </div>
   );
 }

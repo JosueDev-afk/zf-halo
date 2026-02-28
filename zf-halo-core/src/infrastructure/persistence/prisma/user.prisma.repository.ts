@@ -1,21 +1,27 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
-import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
+import {
+  IUserRepository,
+  UserFilters,
+} from '../../../domain/repositories/user.repository.interface';
 import { User, CreateUserData } from '../../../domain/entities/user.entity';
 import { PaginatedResult } from '../../../application/dtos/common/paginated-result.dto';
 
 /**
  * Repository Implementation (Adapter): UserPrismaRepository
  * Infrastructure layer adapter implementing the IUserRepository port.
+ *
+ * NOTE: `mapToEntity` uses `unknown` + cast because Prisma's generated types
+ * will not include latitude/longitude/locationName until `prisma migrate dev`
+ * is run. After migration these fields will be present in the Prisma response.
  */
 @Injectable()
 export class UserPrismaRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id } });
     return user ? this.mapToEntity(user) : null;
   }
 
@@ -26,10 +32,26 @@ export class UserPrismaRepository implements IUserRepository {
     return user ? this.mapToEntity(user) : null;
   }
 
-  async findAll(skip?: number, take?: number): Promise<PaginatedResult<User>> {
+  async findAll(
+    skip?: number,
+    take?: number,
+    filters?: UserFilters,
+  ): Promise<PaginatedResult<User>> {
+    const where: Prisma.UserWhereInput = {
+      ...(filters?.role && { role: filters.role as Prisma.EnumRoleFilter }),
+      ...(filters?.search && {
+        OR: [
+          { firstName: { contains: filters.search, mode: 'insensitive' } },
+          { lastName: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
     const [total, records] = await this.prisma.$transaction([
-      this.prisma.user.count(),
+      this.prisma.user.count({ where }),
       this.prisma.user.findMany({
+        where,
         skip,
         take,
         orderBy: { createdAt: 'desc' },
@@ -73,8 +95,18 @@ export class UserPrismaRepository implements IUserRepository {
         ...(data.passwordHash && { passwordHash: data.passwordHash }),
         ...(data.firstName && { firstName: data.firstName }),
         ...(data.lastName && { lastName: data.lastName }),
-        ...(data.company && { company: data.company }),
+        ...(data.company !== undefined && { company: data.company }),
+
+        ...(data.latitude !== undefined &&
+          ({ latitude: data.latitude } as any)),
+
+        ...(data.longitude !== undefined &&
+          ({ longitude: data.longitude } as any)),
+
+        ...(data.locationName !== undefined &&
+          ({ locationName: data.locationName } as any)),
         ...(data.role && { role: data.role }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });
     return this.mapToEntity(user);
@@ -90,16 +122,20 @@ export class UserPrismaRepository implements IUserRepository {
 
   private mapToEntity(prismaUser: any): User {
     return {
-      id: prismaUser.id,
-      email: prismaUser.email,
-      passwordHash: prismaUser.passwordHash,
-      firstName: prismaUser.firstName,
-      lastName: prismaUser.lastName,
-      company: prismaUser.company ?? undefined,
-      role: prismaUser.role,
-      isActive: prismaUser.isActive,
-      createdAt: prismaUser.createdAt,
-      updatedAt: prismaUser.updatedAt,
+      id: prismaUser.id as string,
+      email: prismaUser.email as string,
+      passwordHash: prismaUser.passwordHash as string,
+      firstName: prismaUser.firstName as string,
+      lastName: prismaUser.lastName as string,
+      company: (prismaUser.company as string | null) ?? undefined,
+      latitude: (prismaUser.latitude as number | null | undefined) ?? null,
+      longitude: (prismaUser.longitude as number | null | undefined) ?? null,
+      locationName:
+        (prismaUser.locationName as string | null | undefined) ?? null,
+      role: prismaUser.role as User['role'],
+      isActive: prismaUser.isActive as boolean,
+      createdAt: prismaUser.createdAt as Date,
+      updatedAt: prismaUser.updatedAt as Date,
     };
   }
 }

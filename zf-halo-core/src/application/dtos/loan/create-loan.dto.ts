@@ -31,4 +31,11 @@ export class CreateLoanDto {
   @IsOptional()
   @IsString()
   comments?: string;
+
+  @ApiPropertyOptional({
+    description: 'Override requester user ID (Admin only)',
+  })
+  @IsOptional()
+  @IsUUID()
+  requesterId?: string;
 }

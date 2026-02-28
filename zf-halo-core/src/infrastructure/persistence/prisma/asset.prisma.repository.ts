@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
-import { IAssetRepository } from '../../../domain/repositories/asset.repository.interface';
+import {
+  IAssetRepository,
+  AssetFilters,
+} from '../../../domain/repositories/asset.repository.interface';
 import {
   Asset,
   CreateAssetData,
@@ -56,8 +59,32 @@ function toDomain(
 export class AssetPrismaRepository implements IAssetRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(skip?: number, take?: number): Promise<PaginatedResult<Asset>> {
-    const where = { isActive: true };
+  async findAll(
+    skip?: number,
+    take?: number,
+    filters?: AssetFilters,
+  ): Promise<PaginatedResult<Asset>> {
+    const where: Prisma.AssetWhereInput = {
+      isActive: true,
+      ...(filters?.status && {
+        machineStatus: filters.status as Prisma.EnumMachineStatusFilter,
+      }),
+      ...(filters?.category && {
+        category: { equals: filters.category, mode: 'insensitive' },
+      }),
+      ...(filters?.search && {
+        OR: [
+          { machineName: { contains: filters.search, mode: 'insensitive' } },
+          { tag: { contains: filters.search, mode: 'insensitive' } },
+          { brand: { contains: filters.search, mode: 'insensitive' } },
+          { model: { contains: filters.search, mode: 'insensitive' } },
+          { serialNumber: { contains: filters.search, mode: 'insensitive' } },
+          { area: { contains: filters.search, mode: 'insensitive' } },
+          { projectName: { contains: filters.search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
     const [total, records] = await this.prisma.$transaction([
       this.prisma.asset.count({ where }),
       this.prisma.asset.findMany({

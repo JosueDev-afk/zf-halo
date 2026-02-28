@@ -34,12 +34,15 @@ model User {
   firstName    String   @map("first_name")
   lastName     String   @map("last_name")
   company      String?
+  latitude     Float?
+  longitude    Float?
+  locationName String?  @map("location_name")
   role         Role     @default(USER)
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  // Future relations
+  // Relations
   loans         Loan[]                 @relation("RequestedLoans")
   approvedLoans Loan[]                 @relation("ApprovedLoans")
   notifications InternalNotification[]
@@ -168,6 +171,8 @@ model Destination {
   id        String   @id @default(uuid())
   name      String   @unique
   address   String?
+  latitude  Float?
+  longitude Float?
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   loans     Loan[]

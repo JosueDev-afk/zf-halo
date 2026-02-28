@@ -17,7 +17,7 @@ import {
   UpdateUserDto,
   UpdateUserProfileDto,
 } from '../../../application/dtos/users/update-user.dto';
-import { PaginationQueryDto } from '../../../application/dtos/common/pagination-query.dto';
+import { GetUsersQueryDto } from '../../../application/dtos/users/get-users-query.dto';
 import { UserResponseDto } from '../../../application/dtos/auth';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { PermissionsGuard } from '../guards/permissions.guard';
@@ -40,7 +40,7 @@ export class UsersController {
   @Get()
   @RequirePermissions(Permission.ACCOUNT_MANAGE)
   @ApiOperation({ summary: 'List all users (Admin only)' })
-  async findAll(@Query() query: PaginationQueryDto) {
+  async findAll(@Query() query: GetUsersQueryDto) {
     return this.getUsersUseCase.execute(query);
   }
 

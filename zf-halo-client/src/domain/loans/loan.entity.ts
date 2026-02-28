@@ -5,7 +5,8 @@ export type LoanStatus =
   | "REQUESTED"
   | "AUTHORIZED"
   | "CHECKED_OUT"
-  | "RETURNED";
+  | "RETURNED"
+  | "REJECTED";
 
 export interface Loan {
   id: string;
@@ -36,6 +37,8 @@ export interface CreateLoanDto {
   estimatedReturnDate: string;
   quantity?: number;
   comments?: string;
+  /** Admin only: create loan on behalf of another user */
+  requesterId?: string;
 }
 
 export interface AuthorizeLoanDto {

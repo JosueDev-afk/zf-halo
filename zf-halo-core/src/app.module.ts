@@ -16,6 +16,7 @@ import { NotificationsModule } from './modules/notifications.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountsModule } from './modules/accounts.module';
+import { DestinationsModule } from './modules/destinations.module';
 
 @Module({
   imports: [
@@ -36,11 +37,11 @@ import { AccountsModule } from './modules/accounts.module';
         },
       }),
     }),
-    // Rate limiting (10 requests per 60 seconds)
+    // Rate limiting (300 requests per 60 seconds)
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 10,
+        limit: 300,
       },
     ]),
     // Database
@@ -51,6 +52,7 @@ import { AccountsModule } from './modules/accounts.module';
     AssetsModule,
     AccountsModule,
     LoansModule,
+    DestinationsModule,
     NotificationsModule,
     PrometheusModule.register(),
   ],
