@@ -15,8 +15,8 @@ interface QRScannerSheetProps {
 
 export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const readerRef = useRef<unknown>(null);
+  // We'll store the object returned by zxing to stop decoding later
+  const controlsRef = useRef<any>(null);
   const [status, setStatus] = useState<
     "idle" | "scanning" | "error" | "success"
   >("idle");
@@ -33,43 +33,35 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
     setErrorMsg("");
     setScannedTag("");
 
+    let mounted = true;
+
     const startScanner = async () => {
       try {
         const { BrowserMultiFormatReader } = await import("@zxing/browser");
         const reader = new BrowserMultiFormatReader();
-        readerRef.current = reader;
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-        streamRef.current = stream;
+        if (!videoRef.current || !mounted) return;
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-
-          // Poll for QR codes
-          const intervalId = setInterval(async () => {
-            if (!videoRef.current) return;
-            try {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const result = await (reader as any).decodeFromVideoElement(
-                videoRef.current,
-              );
-              if (result) {
-                clearInterval(intervalId);
-                const tag = result.getText() as string;
-                setScannedTag(tag);
-                await handleQRDetected(tag);
-              }
-            } catch {
-              // Ignore decode failures (normal when no QR in frame)
+        // Uses continuous decoding directly instead of manual setInterval
+        const controls = await reader.decodeFromConstraints(
+          { audio: false, video: { facingMode: "environment" } },
+          videoRef.current,
+          async (result, error) => {
+            if (!mounted) return;
+            if (result) {
+              const tag = result.getText();
+              setScannedTag(tag);
+              controls.stop();
+              await handleQRDetected(tag);
             }
-          }, 500);
-
-          return () => clearInterval(intervalId);
-        }
+            if (error && error.name !== "NotFoundException") {
+              // Ignore NotFoundException as it just means no QR code was found in the frame
+            }
+          },
+        );
+        controlsRef.current = controls;
       } catch (err: unknown) {
+        if (!mounted) return;
         const msg = err instanceof Error ? err.message : String(err);
         setStatus("error");
         if (msg.includes("Permission") || msg.includes("NotAllowed")) {
@@ -84,16 +76,13 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
       }
     };
 
-    let cleanupFn: (() => void) | undefined;
-    void startScanner().then((fn) => {
-      cleanupFn = fn;
-    });
+    void startScanner();
 
     return () => {
-      cleanupFn?.();
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
+      mounted = false;
+      if (controlsRef.current) {
+        controlsRef.current.stop();
+        controlsRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,15 +92,17 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
     setStatus("success");
 
     // Stop camera
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+    if (controlsRef.current) {
+      controlsRef.current.stop();
+      controlsRef.current = null;
     }
 
     const defaultDestinationId = destinations?.[0]?.id ?? "";
 
     if (!defaultDestinationId) {
-      toast.error("No hay destino configurado. Contacta al administrador.");
+      toast.error(
+        "No destination configured. Please contact the administrator.",
+      );
       onClose();
       return;
     }
@@ -120,11 +111,12 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
       const { apiClient } = await import("@/infrastructure/http/client");
       const res = await apiClient.get<{
         items: Array<{ id: string; tag: string }>;
-      }>(`/assets?tag=${encodeURIComponent(tag)}&limit=1`);
-      const asset = res.data.items?.[0];
+      }>(`/assets?search=${encodeURIComponent(tag)}&limit=1`);
+
+      const asset = res.data?.items?.[0];
 
       if (!asset) {
-        toast.error(`No se encontró activo con tag: ${tag}`);
+        toast.error(`No asset found with tag: ${tag}`);
         onClose();
         return;
       }
@@ -136,10 +128,16 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
         assetId: asset.id,
         destinationId: defaultDestinationId,
         estimatedReturnDate: tomorrow.toISOString(),
-        comments: `QR escaneado: ${tag}`,
+        comments: `QR Scanned: ${tag}`,
       });
-    } catch {
-      // Error handled by mutation
+      // Removed manual toast.success since mutation onSuccess handles it
+    } catch (err: any) {
+      console.error("QR scanner error:", err);
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Error al procesar el código QR",
+      );
     }
     onClose();
   };
@@ -179,10 +177,10 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
                   </div>
                   <div>
                     <h2 className="font-semibold text-foreground">
-                      Escanear QR
+                      Scan QR Code
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      Apunta al código QR del activo
+                      Point camera at the asset's QR code
                     </p>
                   </div>
                 </div>
@@ -203,12 +201,12 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
 
                 {/* Scanning overlay */}
                 {status === "scanning" && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="relative w-48 h-48">
                       {[
                         "top-0 left-0 border-t-2 border-l-2 rounded-tl-xl",
@@ -245,7 +243,7 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
                       <QrCode className="h-8 w-8 text-white" />
                     </motion.div>
                     <p className="mt-3 text-sm text-white font-medium">
-                      ¡QR detectado! Creando solicitud…
+                      QR Detected! Creating request...
                     </p>
                     <p className="text-xs text-white/60 mt-1">{scannedTag}</p>
                   </div>
@@ -262,7 +260,7 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
                       onClick={() => window.location.reload()}
                       className="mt-4 text-xs"
                     >
-                      Reintentar
+                      Retry
                     </Button>
                   </div>
                 )}
@@ -280,8 +278,8 @@ export function QRScannerSheet({ open, onClose }: QRScannerSheetProps) {
               </div>
 
               <p className="text-center text-xs text-muted-foreground">
-                La solicitud de préstamo se creará automáticamente al detectar
-                el QR
+                The loan request will be created automatically when the QR is
+                detected
               </p>
             </div>
           </motion.div>

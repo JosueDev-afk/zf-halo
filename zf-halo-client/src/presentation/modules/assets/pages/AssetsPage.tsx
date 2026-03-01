@@ -84,10 +84,10 @@ export default function AssetsPage() {
             <Package className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Activos</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Assets</h1>
             <p className="text-sm text-muted-foreground">
-              {totalItems.toLocaleString()} activo{totalItems !== 1 ? "s" : ""}{" "}
-              registrado{totalItems !== 1 ? "s" : ""}
+              {totalItems.toLocaleString()} asset{totalItems !== 1 ? "s" : ""}{" "}
+              registered
             </p>
           </div>
         </div>
@@ -98,10 +98,10 @@ export default function AssetsPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar activos..."
+              placeholder="Search assets..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              aria-label="Buscar activos"
+              aria-label="Search assets"
               className="h-10 w-full rounded-xl border border-border bg-background/60 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:w-56"
             />
           </div>
@@ -112,11 +112,11 @@ export default function AssetsPage() {
             onChange={(e) =>
               handleStatus(e.target.value as MachineStatus | "ALL")
             }
-            aria-label="Filtrar por estado"
+            aria-label="Filter by status"
             className="h-10 rounded-xl border border-border bg-background/60 px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="ALL" className="bg-background">
-              Todos los estados
+              All statuses
             </option>
             {allStatuses.map((s) => (
               <option key={s} value={s} className="bg-background">
@@ -132,7 +132,7 @@ export default function AssetsPage() {
               className="flex cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 active:scale-95"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nuevo Activo</span>
+              <span className="hidden sm:inline">New Asset</span>
             </button>
           ) : null}
         </div>
@@ -245,12 +245,10 @@ export default function AssetsPage() {
                         ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
                         : "cursor-pointer bg-primary/10 text-primary hover:bg-primary/20 ring-1 ring-primary/20",
                     )}
-                    title={
-                      outOfStock ? "Sin stock disponible" : "Solicitar préstamo"
-                    }
+                    title={outOfStock ? "No stock available" : "Request loan"}
                   >
                     <ArrowLeftRight className="h-3.5 w-3.5" />
-                    {outOfStock ? "Sin disponibilidad" : "Solicitar Préstamo"}
+                    {outOfStock ? "No Availability" : "Request Loan"}
                   </button>
                 </motion.div>
               );

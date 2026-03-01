@@ -41,6 +41,7 @@ export class AuthorizeLoanUseCase {
       loanId: updatedLoan.id,
       status: updatedLoan.status,
       folio: updatedLoan.folio,
+      requesterId: updatedLoan.requesterId,
     });
 
     return updatedLoan;

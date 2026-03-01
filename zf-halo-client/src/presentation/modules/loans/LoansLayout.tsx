@@ -27,7 +27,7 @@ export function LoansLayout({ children }: LoansLayoutProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
-  // Badge count for pending
+  // Badge count for pending approvals
   const { data: pendingData } = useLoans(1, 1, { status: "REQUESTED" });
   const pendingCount = pendingData?.total ?? 0;
 
@@ -35,20 +35,20 @@ export function LoansLayout({ children }: LoansLayoutProps) {
     {
       to: "/loans/active" as const,
       icon: PackageCheck,
-      label: "Activos",
+      label: "Active",
       show: true,
     },
     {
       to: "/loans/pending" as const,
       icon: Clock,
-      label: "Pendientes",
+      label: "Pending Approval",
       badge: pendingCount,
       show: canApprove,
     },
     {
       to: "/loans/history" as const,
       icon: History,
-      label: "Historial",
+      label: "History",
       show: true,
     },
   ];
@@ -62,9 +62,9 @@ export function LoansLayout({ children }: LoansLayoutProps) {
             <ArrowLeftRight className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Préstamos</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Loans</h1>
             <p className="text-sm text-muted-foreground">
-              Gestión del ciclo de vida de activos
+              Asset loan lifecycle management
             </p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function LoansLayout({ children }: LoansLayoutProps) {
           <button
             onClick={() => setQrOpen(true)}
             className="flex h-9 w-9 md:hidden items-center justify-center rounded-xl border border-border bg-background hover:bg-accent transition-colors"
-            title="Escanear QR"
+            title="Scan QR"
           >
             <QrCode className="h-4 w-4" />
           </button>
@@ -82,7 +82,7 @@ export function LoansLayout({ children }: LoansLayoutProps) {
             className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nuevo Préstamo</span>
+            <span className="hidden sm:inline">New Loan</span>
           </button>
         </div>
       </div>
@@ -123,7 +123,7 @@ export function LoansLayout({ children }: LoansLayoutProps) {
       <button
         onClick={() => setSheetOpen(true)}
         className="fixed bottom-24 right-4 z-40 md:hidden flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/30 text-primary-foreground hover:scale-105 active:scale-95 transition-transform"
-        aria-label="Nuevo Préstamo"
+        aria-label="New Loan"
       >
         <Plus className="h-6 w-6" />
       </button>

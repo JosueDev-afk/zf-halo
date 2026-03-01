@@ -28,13 +28,14 @@ export function useCreateLoan() {
   return useMutation({
     mutationFn: (data: CreateLoanDto) => loansApi.createLoan(data),
     onSuccess: () => {
-      toast.success("Solicitud de préstamo creada");
+      toast.success("Loan request created successfully");
       queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["assets"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"], exact: false });
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Error al crear la solicitud",
+        error.response?.data?.message || "Failed to create loan request",
       );
     },
   });
@@ -46,13 +47,11 @@ export function useAuthorizeLoan() {
     mutationFn: ({ id, data }: { id: string; data: AuthorizeLoanDto }) =>
       loansApi.authorizeLoan(id, data),
     onSuccess: () => {
-      toast.success("Préstamo autorizado correctamente");
+      toast.success("Loan authorized successfully");
       queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Error al autorizar el préstamo",
-      );
+      toast.error(error.response?.data?.message || "Failed to authorize loan");
     },
   });
 }
@@ -63,14 +62,12 @@ export function useCheckoutLoan() {
     mutationFn: ({ id, data }: { id: string; data: CheckOutLoanDto }) =>
       loansApi.checkoutLoan(id, data),
     onSuccess: () => {
-      toast.success("Activo entregado al solicitante");
+      toast.success("Asset checked out to requester");
       queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["assets"], exact: false });
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Error al entregar el activo",
-      );
+      toast.error(error.response?.data?.message || "Failed to checkout asset");
     },
   });
 }
@@ -81,14 +78,12 @@ export function useCheckinLoan() {
     mutationFn: ({ id, data }: { id: string; data: CheckInLoanDto }) =>
       loansApi.checkinLoan(id, data),
     onSuccess: () => {
-      toast.success("Activo devuelto al inventario");
+      toast.success("Asset returned to inventory");
       queryClient.invalidateQueries({ queryKey: ["loans"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["assets"], exact: false });
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Error al registrar la devolución",
-      );
+      toast.error(error.response?.data?.message || "Failed to record return");
     },
   });
 }

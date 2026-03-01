@@ -25,18 +25,17 @@ export const AssetType = {
 
 export type AssetType = (typeof AssetType)[keyof typeof AssetType];
 
-/** Spanish display labels for MachineStatus */
 export const MachineStatusLabel: Record<MachineStatus, string> = {
-  OPERATIVE: "Operativa",
-  IN_MAINTENANCE: "En Mantenimiento",
-  OUT_OF_SERVICE: "Fuera de Servicio",
-  CALIBRATION: "Calibración",
-  LOANED: "Prestada",
-  DECOMMISSIONED: "Dada de Baja",
-  IN_TRANSIT: "En Tránsito",
-  IN_CUSTOMS: "En Aduana",
-  UNDER_EVALUATION: "En Evaluación",
-  CANNIBALIZED: "Canibalizada",
+  OPERATIVE: "Operative",
+  IN_MAINTENANCE: "In Maintenance",
+  OUT_OF_SERVICE: "Out of Service",
+  CALIBRATION: "Calibration",
+  LOANED: "Loaned",
+  DECOMMISSIONED: "Decommissioned",
+  IN_TRANSIT: "In Transit",
+  IN_CUSTOMS: "In Customs",
+  UNDER_EVALUATION: "Under Evaluation",
+  CANNIBALIZED: "Cannibalized",
   IMPAIRMENT: "Impairment",
 };
 

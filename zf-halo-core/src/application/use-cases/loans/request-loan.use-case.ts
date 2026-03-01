@@ -95,6 +95,7 @@ export class RequestLoanUseCase {
       loanId: loan.id,
       status: loan.status,
       folio: loan.folio,
+      requesterId: loan.requesterId,
     });
 
     return loan;

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -34,7 +34,6 @@ import { LoanRequestSheet } from "@/presentation/modules/loans/LoanRequestSheet"
 export default function AssetDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const isManager = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
   const [showDelete, setShowDelete] = useState(false);
@@ -49,14 +48,12 @@ export default function AssetDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: (assetId: string) => assetsApi.deleteAsset(assetId),
     onSuccess: () => {
-      toast.success("Activo eliminado");
-      void queryClient.invalidateQueries({
-        queryKey: ["assets"],
-        exact: false,
-      });
-      void navigate({ to: "/assets" });
+      toast.success("Asset deleted successfully");
+      navigate({ to: "/assets" });
     },
-    onError: () => toast.error("Error al eliminar el activo"),
+    onError: () => {
+      toast.error("Failed to delete asset");
+    },
   });
 
   if (isLoading) {
@@ -70,12 +67,12 @@ export default function AssetDetailPage() {
   if (!asset) {
     return (
       <div className="container max-w-3xl px-4 py-10 text-center">
-        <p className="text-muted-foreground">Activo no encontrado</p>
+        <p className="text-muted-foreground">Asset not found</p>
         <button
           onClick={() => void navigate({ to: "/assets" })}
           className="mt-4 text-sm text-primary hover:underline"
         >
-          ← Volver a Activos
+          ← Back to Assets
         </button>
       </div>
     );
@@ -115,7 +112,7 @@ export default function AssetDetailPage() {
             className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary/10 px-3.5 py-2 text-sm font-medium text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/20 active:scale-95"
           >
             <PackagePlus className="h-3.5 w-3.5" />
-            Solicitar Préstamo
+            Request Loan
           </button>
 
           {isManager ? (
@@ -330,9 +327,9 @@ export default function AssetDetailPage() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/15">
                 <Trash2 className="h-6 w-6 text-red-400" />
               </div>
-              <h3 className="mb-2 font-semibold">Eliminar Activo</h3>
+              <h3 className="mb-2 font-semibold">Delete Asset</h3>
               <p className="mb-6 text-sm text-muted-foreground">
-                ¿Estas seguro de que deseas eliminar{" "}
+                Are you sure you want to delete{" "}
                 <strong>{asset.machineName}</strong>?
               </p>
               <div className="flex justify-center gap-3">
@@ -340,7 +337,7 @@ export default function AssetDetailPage() {
                   onClick={() => setShowDelete(false)}
                   className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   onClick={() => deleteMutation.mutate(asset.id)}
@@ -350,7 +347,7 @@ export default function AssetDetailPage() {
                   {deleteMutation.isPending ? (
                     <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
                   ) : null}
-                  Eliminar
+                  Delete
                 </button>
               </div>
             </motion.div>

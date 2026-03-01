@@ -32,6 +32,7 @@ export class CheckOutLoanUseCase {
       loanId: updatedLoan.id,
       status: updatedLoan.status,
       folio: updatedLoan.folio,
+      requesterId: updatedLoan.requesterId,
     });
 
     return updatedLoan;

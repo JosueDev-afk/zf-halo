@@ -40,27 +40,27 @@ type Tab = "pending" | "all";
 const STATUS_CONFIG: Record<LoanStatus, { label: string; className: string }> =
   {
     REQUESTED: {
-      label: "Solicitado",
+      label: "Requested",
       className:
         "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
     },
     AUTHORIZED: {
-      label: "Autorizado",
+      label: "Authorized",
       className:
         "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
     },
     CHECKED_OUT: {
-      label: "En uso",
+      label: "Checked Out",
       className:
         "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
     },
     RETURNED: {
-      label: "Devuelto",
+      label: "Returned",
       className:
         "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
     },
     REJECTED: {
-      label: "Rechazado",
+      label: "Rejected",
       className:
         "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20",
     },
@@ -79,9 +79,10 @@ export default function LoansPage() {
   const [qrOpen, setQrOpen] = useState(false);
   const limit = 10;
 
-  // For pending tab: only REQUESTED status
-  const pendingFilters = { status: "REQUESTED" };
-  const allFilters = search ? { folio: search } : {};
+  // Pending tab: show REQUESTED + AUTHORIZED so managers can authorize AND checkout in one place.
+  // No status filter → API returns all actionable loans sorted by creation date.
+  const pendingFilters = search ? { search } : {};
+  const allFilters = search ? { search } : {};
   const activeFilters = tab === "pending" ? pendingFilters : allFilters;
 
   const { data, isLoading } = useLoans(page, limit, activeFilters);
@@ -89,7 +90,7 @@ export default function LoansPage() {
   const checkoutMutation = useCheckoutLoan();
   const checkinMutation = useCheckinLoan();
 
-  // Count for badge
+  // Badge: count REQUESTED loans (still pending approval)
   const { data: pendingData } = useLoans(1, 1, { status: "REQUESTED" });
   const pendingCount = pendingData?.total ?? 0;
 
@@ -129,9 +130,9 @@ export default function LoansPage() {
             <ArrowLeftRight className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Préstamos</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Loans</h1>
             <p className="text-sm text-muted-foreground">
-              Gestión del ciclo de vida de activos
+              Asset loan lifecycle management
             </p>
           </div>
         </div>
@@ -144,7 +145,7 @@ export default function LoansPage() {
             size="icon"
             className="h-9 w-9 md:hidden"
             onClick={() => setQrOpen(true)}
-            title="Escanear QR"
+            title="Scan QR"
           >
             <QrCode className="h-4 w-4" />
           </Button>
@@ -155,13 +156,13 @@ export default function LoansPage() {
             className="gap-2 shadow-lg shadow-primary/20"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nuevo Préstamo</span>
+            <span className="hidden sm:inline">New Loan</span>
           </Button>
 
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar folio..."
+              placeholder="Search by folio or asset..."
               className="pl-9 bg-background/50 border-border"
               value={search}
               onChange={(e) => {
@@ -186,7 +187,7 @@ export default function LoansPage() {
             }`}
           >
             <Clock className="h-3.5 w-3.5" />
-            Pendientes
+            Action Needed
             {pendingCount > 0 && (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
                 {pendingCount > 9 ? "9+" : pendingCount}
@@ -202,7 +203,7 @@ export default function LoansPage() {
             }`}
           >
             <ListFilter className="h-3.5 w-3.5" />
-            Todos
+            All
           </button>
         </div>
       )}
@@ -232,9 +233,9 @@ export default function LoansPage() {
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
                 <CheckCircle className="h-8 w-8 text-muted-foreground" />
               </div>
-              <p className="font-medium">Sin solicitudes pendientes</p>
+              <p className="font-medium">No pending requests</p>
               <p className="text-sm text-muted-foreground">
-                Todas las solicitudes han sido procesadas
+                All loan requests have been processed
               </p>
             </div>
           ) : (
@@ -254,8 +255,14 @@ export default function LoansPage() {
                         {loan.folio}
                       </span>
                       <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                      <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                        Pendiente de autorización
+                      <span
+                        className={`text-xs font-medium ${
+                          loan.status === "AUTHORIZED"
+                            ? "text-purple-600 dark:text-purple-400"
+                            : "text-amber-600 dark:text-amber-400"
+                        }`}
+                      >
+                        {STATUS_CONFIG[loan.status]?.label ?? loan.status}
                       </span>
                     </div>
 
@@ -272,12 +279,14 @@ export default function LoansPage() {
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
                       <span>
                         <strong className="text-foreground/80">
-                          Solicitante:
+                          Requester:
                         </strong>{" "}
                         {loan.requester?.firstName} {loan.requester?.lastName}
                       </span>
                       <span>
-                        <strong className="text-foreground/80">Retorno:</strong>{" "}
+                        <strong className="text-foreground/80">
+                          Return by:
+                        </strong>{" "}
                         {format(
                           new Date(loan.estimatedReturnDate),
                           "dd MMM yyyy",
@@ -287,14 +296,14 @@ export default function LoansPage() {
                       {loan.destination?.name && (
                         <span>
                           <strong className="text-foreground/80">
-                            Destino:
+                            Destination:
                           </strong>{" "}
                           {loan.destination.name}
                         </span>
                       )}
                       {loan.comments && (
                         <span className="w-full">
-                          <strong className="text-foreground/80">Notas:</strong>{" "}
+                          <strong className="text-foreground/80">Notes:</strong>{" "}
                           {loan.comments}
                         </span>
                       )}
@@ -303,24 +312,50 @@ export default function LoansPage() {
 
                   {/* Right: actions */}
                   <div className="flex gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      onClick={() => handleAuthorize(loan.id)}
-                      disabled={authorizeMutation.isPending}
-                      className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-                    >
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      Autorizar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
-                      disabled={authorizeMutation.isPending}
-                    >
-                      <XCircle className="h-3.5 w-3.5" />
-                      Rechazar
-                    </Button>
+                    {loan.status === "REQUESTED" && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAuthorize(loan.id)}
+                          disabled={authorizeMutation.isPending}
+                          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Authorize
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
+                          disabled={authorizeMutation.isPending}
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    {loan.status === "AUTHORIZED" && isAdmin && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleCheckout(loan.id)}
+                        disabled={checkoutMutation.isPending}
+                        className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                      >
+                        <PackageOpen className="h-3.5 w-3.5" />
+                        Checkout
+                      </Button>
+                    )}
+                    {loan.status === "CHECKED_OUT" && isAdmin && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleCheckin(loan.id)}
+                        disabled={checkinMutation.isPending}
+                        className="gap-1.5 bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
+                      >
+                        <Undo2 className="h-3.5 w-3.5" />
+                        Return
+                      </Button>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -342,12 +377,12 @@ export default function LoansPage() {
                   <thead className="bg-muted/50 border-b border-border text-muted-foreground">
                     <tr>
                       <th className="px-5 py-3.5 font-medium">Folio</th>
-                      <th className="px-5 py-3.5 font-medium">Activo</th>
-                      <th className="px-5 py-3.5 font-medium">Solicitante</th>
-                      <th className="px-5 py-3.5 font-medium">Retorno</th>
-                      <th className="px-5 py-3.5 font-medium">Estado</th>
+                      <th className="px-5 py-3.5 font-medium">Asset</th>
+                      <th className="px-5 py-3.5 font-medium">Requester</th>
+                      <th className="px-5 py-3.5 font-medium">Return By</th>
+                      <th className="px-5 py-3.5 font-medium">Status</th>
                       <th className="px-5 py-3.5 font-medium text-right">
-                        Acciones
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -368,7 +403,7 @@ export default function LoansPage() {
                           colSpan={6}
                           className="px-6 py-12 text-center text-muted-foreground"
                         >
-                          No se encontraron préstamos
+                          No loans found
                         </td>
                       </tr>
                     ) : (
@@ -423,7 +458,7 @@ export default function LoansPage() {
                                   onClick={() => handleAuthorize(loan.id)}
                                 >
                                   <CheckCircle className="mr-1 h-3 w-3" />
-                                  Autorizar
+                                  Authorize
                                 </Button>
                               )}
                               {isAdmin && loan.status === "AUTHORIZED" && (
@@ -434,7 +469,7 @@ export default function LoansPage() {
                                   onClick={() => handleCheckout(loan.id)}
                                 >
                                   <PackageOpen className="mr-1 h-3 w-3" />
-                                  Entregar
+                                  Checkout
                                 </Button>
                               )}
                               {isAdmin && loan.status === "CHECKED_OUT" && (
@@ -445,7 +480,7 @@ export default function LoansPage() {
                                   onClick={() => handleCheckin(loan.id)}
                                 >
                                   <Undo2 className="mr-1 h-3 w-3" />
-                                  Devolver
+                                  Return
                                 </Button>
                               )}
                             </div>
@@ -513,7 +548,7 @@ export default function LoansPage() {
         id="fab-new-loan"
         onClick={() => setSheetOpen(true)}
         className="fixed bottom-24 right-4 z-40 md:hidden flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/30 text-primary-foreground hover:scale-105 active:scale-95 transition-transform"
-        aria-label="Nuevo Préstamo"
+        aria-label="New Loan"
       >
         <Plus className="h-6 w-6" />
       </button>

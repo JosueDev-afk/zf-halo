@@ -32,9 +32,9 @@ import type { Asset } from "@/domain/assets/models/asset.model";
 import type { User } from "@/domain/auth/models/user.model";
 
 const loanSchema = z.object({
-  assetId: z.string().uuid("Selecciona un activo"),
-  destinationId: z.string().uuid("Selecciona un destino"),
-  estimatedReturnDate: z.string().min(1, "Ingresa la fecha de retorno"),
+  assetId: z.string().uuid("Select an asset"),
+  destinationId: z.string().uuid("Select a destination"),
+  estimatedReturnDate: z.string().min(1, "Enter the return date"),
   quantity: z.number().min(1).optional(),
   comments: z.string().optional(),
   requesterId: z.string().uuid().optional(),
@@ -200,10 +200,10 @@ export function LoanRequestSheet({
                   </div>
                   <div>
                     <h2 className="font-semibold text-foreground text-base">
-                      Solicitar Préstamo
+                      Request Loan
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      Completa los detalles del préstamo
+                      Complete the loan details
                     </p>
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export function LoanRequestSheet({
               {isAdmin && (
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <UserIcon className="h-3.5 w-3.5" /> Solicitante (Admin)
+                    <UserIcon className="h-3.5 w-3.5" /> Requester (Admin)
                   </Label>
                   <button
                     type="button"
@@ -242,7 +242,7 @@ export function LoanRequestSheet({
                     >
                       {selectedUser
                         ? `${selectedUser.firstName} ${selectedUser.lastName}`
-                        : "Seleccionar usuario (por defecto: tú)"}
+                        : "Select user (default: you)"}
                     </span>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </button>
@@ -275,7 +275,7 @@ export function LoanRequestSheet({
               {/* Asset search */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Package className="h-3.5 w-3.5" /> Activo
+                  <Package className="h-3.5 w-3.5" /> Asset
                 </Label>
                 {selectedAsset ? (
                   <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-primary/10 border border-primary/20">
@@ -303,14 +303,15 @@ export function LoanRequestSheet({
                 ) : (
                   <div className="space-y-2">
                     <Input
-                      placeholder="Buscar por nombre, tag o modelo..."
+                      placeholder="Search by name, tag or model..."
                       value={assetSearch}
                       onChange={(e) => setAssetSearch(e.target.value)}
                       className="bg-background border-border"
                     />
                     {assetSearching && (
                       <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Buscando...
+                        <Loader2 className="h-3 w-3 animate-spin" />{" "}
+                        Searching...
                       </div>
                     )}
                     {assetResults.length > 0 && (
@@ -345,7 +346,7 @@ export function LoanRequestSheet({
               {selectedAsset?.assetType === "BULK" && (
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    Cantidad
+                    Quantity
                   </Label>
                   <Controller
                     name="quantity"
@@ -369,7 +370,7 @@ export function LoanRequestSheet({
               {/* Destination */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" /> Destino
+                  <MapPin className="h-3.5 w-3.5" /> Destination
                 </Label>
                 <button
                   type="button"
@@ -387,7 +388,7 @@ export function LoanRequestSheet({
                   >
                     {selectedDestination
                       ? selectedDestination.name
-                      : "Seleccionar destino..."}
+                      : "Select destination..."}
                   </span>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </button>
@@ -441,7 +442,7 @@ export function LoanRequestSheet({
               {/* Return date */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" /> Fecha de retorno
+                  <Calendar className="h-3.5 w-3.5" /> Return Date
                 </Label>
                 <Controller
                   name="estimatedReturnDate"
@@ -465,10 +466,10 @@ export function LoanRequestSheet({
               {/* Comments */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  Comentarios (opcional)
+                  Comments (optional)
                 </Label>
                 <Input
-                  placeholder="Motivo del préstamo..."
+                  placeholder="Reason for loan..."
                   className="bg-background border-border"
                   {...form.register("comments")}
                 />
@@ -482,11 +483,11 @@ export function LoanRequestSheet({
               >
                 {createLoan.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creando
-                    solicitud...
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating
+                    request...
                   </>
                 ) : (
-                  <>Solicitar Préstamo</>
+                  <>Request Loan</>
                 )}
               </Button>
             </form>

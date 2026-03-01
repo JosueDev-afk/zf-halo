@@ -6,6 +6,11 @@
       "sourceType": "github",
       "computedHash": "9e1bf8ae7221dba7639be5e20b8656026a2d22a70b46ad99b732ba7c7bef03ad"
     },
+    "kpi-dashboard-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "cfa794da381bc10350be1a846859788d984717179bd317e3e7273ba9b211e493"
+    },
     "nestjs-best-practices": {
       "source": "kadajett/agent-nestjs-skills",
       "sourceType": "github",

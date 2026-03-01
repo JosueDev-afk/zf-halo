@@ -17,6 +17,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountsModule } from './modules/accounts.module';
 import { DestinationsModule } from './modules/destinations.module';
+import { DashboardModule } from './modules/dashboard.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { DestinationsModule } from './modules/destinations.module';
     LoansModule,
     DestinationsModule,
     NotificationsModule,
+    DashboardModule,
     PrometheusModule.register(),
   ],
   controllers: [AppController],

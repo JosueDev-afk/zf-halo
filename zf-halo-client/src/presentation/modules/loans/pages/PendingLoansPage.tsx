@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import {
   CheckCircle,
   XCircle,
@@ -50,9 +49,9 @@ export default function PendingLoansPage() {
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
               <CheckCircle className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="font-medium">Sin solicitudes pendientes</p>
+            <p className="font-medium">No pending requests</p>
             <p className="text-sm text-muted-foreground">
-              Todas las solicitudes han sido procesadas
+              All loan requests have been processed
             </p>
           </div>
         ) : (
@@ -72,7 +71,7 @@ export default function PendingLoansPage() {
                     </span>
                     <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                     <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                      Pendiente de autorización
+                      Pending Authorization
                     </span>
                   </div>
 
@@ -87,28 +86,27 @@ export default function PendingLoansPage() {
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
                     <span>
-                      <strong className="text-foreground/80">
-                        Solicitante:
-                      </strong>{" "}
+                      <strong className="text-foreground/80">Requester:</strong>{" "}
                       {loan.requester?.firstName} {loan.requester?.lastName}
                     </span>
                     <span>
-                      <strong className="text-foreground/80">Retorno:</strong>{" "}
+                      <strong className="text-foreground/80">Return:</strong>{" "}
                       {format(
                         new Date(loan.estimatedReturnDate),
-                        "dd MMM yyyy",
-                        { locale: es },
+                        "MMM dd, yyyy",
                       )}
                     </span>
                     {loan.destination?.name && (
                       <span>
-                        <strong className="text-foreground/80">Destino:</strong>{" "}
+                        <strong className="text-foreground/80">
+                          Destination:
+                        </strong>{" "}
                         {loan.destination.name}
                       </span>
                     )}
                     {loan.comments && (
                       <span className="w-full">
-                        <strong className="text-foreground/80">Notas:</strong>{" "}
+                        <strong className="text-foreground/80">Notes:</strong>{" "}
                         {loan.comments}
                       </span>
                     )}
@@ -121,14 +119,14 @@ export default function PendingLoansPage() {
                     onClick={() =>
                       authorizeMutation.mutate({
                         id: loan.id,
-                        data: { comments: "Autorizado desde panel" },
+                        data: { comments: "Authorized from panel" },
                       })
                     }
                     disabled={authorizeMutation.isPending}
                     className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
                   >
                     <CheckCircle className="h-3.5 w-3.5" />
-                    Autorizar
+                    Authorize
                   </Button>
                   <Button
                     size="sm"
@@ -137,7 +135,7 @@ export default function PendingLoansPage() {
                     disabled={authorizeMutation.isPending}
                   >
                     <XCircle className="h-3.5 w-3.5" />
-                    Rechazar
+                    Reject
                   </Button>
                 </div>
               </div>
@@ -153,7 +151,7 @@ export default function PendingLoansPage() {
               className="flex items-center justify-between pt-2"
             >
               <p className="text-sm text-muted-foreground">
-                {(page - 1) * limit + 1}–{Math.min(page * limit, data.total)} de{" "}
+                {(page - 1) * limit + 1}–{Math.min(page * limit, data.total)} of{" "}
                 {data.total}
               </p>
               <div className="flex items-center gap-2">

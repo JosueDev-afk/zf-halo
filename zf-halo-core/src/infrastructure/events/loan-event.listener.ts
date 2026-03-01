@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -7,6 +7,8 @@ import type { INotificationRepository } from '../../domain/repositories/notifica
 
 @Injectable()
 export class LoanEventListener {
+  private readonly logger = new Logger(LoanEventListener.name);
+
   constructor(
     @Inject(NOTIFICATION_REPOSITORY)
     private readonly notificationRepo: INotificationRepository,
@@ -18,24 +20,36 @@ export class LoanEventListener {
     loanId: string;
     status: string;
     folio: string;
+    requesterId?: string;
   }) {
+    if (!payload.requesterId) {
+      this.logger.warn(
+        `loan.status.changed fired without requesterId for loan ${payload.loanId} — skipping notification`,
+      );
+      return;
+    }
+
     const title = `Loan Update: ${payload.folio}`;
-    const message = `The status of the loan ${payload.folio} has changed to ${payload.status}.`;
+    const message = `The status of loan ${payload.folio} changed to ${payload.status}.`;
 
-    // Save to DB
-    const notification = await this.notificationRepo.create({
-      type: 'INFO',
-      userId: '00000000-0000-0000-0000-000000000000', // Replace with dynamic logic based on loan requester/authorizer
-      title,
-      message,
-    });
+    try {
+      const notification = await this.notificationRepo.create({
+        type: 'INFO',
+        userId: payload.requesterId,
+        title,
+        message,
+      });
 
-    // Enqueue job
-    await this.notificationQueue.add('send-notification', {
-      notificationId: notification.id,
-      title,
-      message,
-    });
+      await this.notificationQueue.add('send-notification', {
+        notificationId: notification.id,
+        title,
+        message,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to create notification for loan ${payload.loanId}: ${(err as Error).message}`,
+      );
+    }
   }
 
   @OnEvent('loan.overdue')
@@ -43,21 +57,35 @@ export class LoanEventListener {
     loanId: string;
     folio: string;
     daysOverdue: number;
+    requesterId?: string;
   }) {
+    if (!payload.requesterId) {
+      this.logger.warn(
+        `loan.overdue fired without requesterId for loan ${payload.loanId} — skipping notification`,
+      );
+      return;
+    }
+
     const title = `Loan Overdue Alert: ${payload.folio}`;
-    const message = `The loan ${payload.folio} is ${payload.daysOverdue} days overdue.`;
+    const message = `Loan ${payload.folio} is ${payload.daysOverdue} day(s) overdue.`;
 
-    const notification = await this.notificationRepo.create({
-      type: 'ALERT',
-      userId: '00000000-0000-0000-0000-000000000000',
-      title,
-      message,
-    });
+    try {
+      const notification = await this.notificationRepo.create({
+        type: 'ALERT',
+        userId: payload.requesterId,
+        title,
+        message,
+      });
 
-    await this.notificationQueue.add('send-notification', {
-      notificationId: notification.id,
-      title,
-      message,
-    });
+      await this.notificationQueue.add('send-notification', {
+        notificationId: notification.id,
+        title,
+        message,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to create overdue notification for loan ${payload.loanId}: ${(err as Error).message}`,
+      );
+    }
   }
 }

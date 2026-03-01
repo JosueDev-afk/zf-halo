@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, History } from "lucide-react";
 import { useLoans } from "@/application/loans/useLoans";
 import { Card, CardContent } from "@/presentation/components/ui/card";
@@ -16,27 +15,27 @@ const Skeleton = ({ className }: { className?: string }) => (
 const STATUS_CONFIG: Record<LoanStatus, { label: string; className: string }> =
   {
     REQUESTED: {
-      label: "Solicitado",
+      label: "Requested",
       className:
         "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
     },
     AUTHORIZED: {
-      label: "Autorizado",
+      label: "Authorized",
       className:
         "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
     },
     CHECKED_OUT: {
-      label: "En uso",
+      label: "In Use",
       className:
         "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
     },
     RETURNED: {
-      label: "Devuelto",
+      label: "Returned",
       className:
         "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
     },
     REJECTED: {
-      label: "Rechazado",
+      label: "Rejected",
       className:
         "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20",
     },
@@ -63,12 +62,12 @@ export default function LoansHistoryPage() {
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="bg-muted/50 border-b border-border text-muted-foreground">
                   <tr>
-                    <th className="px-5 py-3.5 font-medium">Folio</th>
-                    <th className="px-5 py-3.5 font-medium">Activo</th>
-                    <th className="px-5 py-3.5 font-medium">Solicitante</th>
-                    <th className="px-5 py-3.5 font-medium">Fecha creación</th>
-                    <th className="px-5 py-3.5 font-medium">Retorno</th>
-                    <th className="px-5 py-3.5 font-medium">Estado</th>
+                    <th className="px-5 py-3.5 font-medium">Receipt</th>
+                    <th className="px-5 py-3.5 font-medium">Asset</th>
+                    <th className="px-5 py-3.5 font-medium">Requester</th>
+                    <th className="px-5 py-3.5 font-medium">Created At</th>
+                    <th className="px-5 py-3.5 font-medium">Return</th>
+                    <th className="px-5 py-3.5 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -87,10 +86,8 @@ export default function LoansHistoryPage() {
                       <td colSpan={6} className="px-6 py-16 text-center">
                         <div className="flex flex-col items-center gap-3 text-muted-foreground">
                           <History className="h-10 w-10 opacity-30" />
-                          <p className="font-medium">Sin historial</p>
-                          <p className="text-sm">
-                            No hay préstamos registrados aún
-                          </p>
+                          <p className="font-medium">No History</p>
+                          <p className="text-sm">No loans registered yet</p>
                         </div>
                       </td>
                     </tr>
@@ -120,15 +117,12 @@ export default function LoansHistoryPage() {
                           {loan.requester?.firstName} {loan.requester?.lastName}
                         </td>
                         <td className="px-5 py-4 text-muted-foreground">
-                          {format(new Date(loan.createdAt), "dd MMM yyyy", {
-                            locale: es,
-                          })}
+                          {format(new Date(loan.createdAt), "MMM dd, yyyy")}
                         </td>
                         <td className="px-5 py-4 text-muted-foreground">
                           {format(
                             new Date(loan.estimatedReturnDate),
-                            "dd MMM yyyy",
-                            { locale: es },
+                            "MMM dd, yyyy",
                           )}
                         </td>
                         <td className="px-5 py-4">
@@ -155,7 +149,7 @@ export default function LoansHistoryPage() {
               className="flex items-center justify-between mt-4"
             >
               <p className="text-sm text-muted-foreground">
-                {(page - 1) * limit + 1}–{Math.min(page * limit, data.total)} de{" "}
+                {(page - 1) * limit + 1}–{Math.min(page * limit, data.total)} of{" "}
                 {data.total}
               </p>
               <div className="flex items-center gap-2">

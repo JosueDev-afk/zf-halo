@@ -34,18 +34,11 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         runtimeCaching: [
           {
+            // API calls must NEVER be served from cache — always go to network.
+            // NetworkOnly prevents Workbox from intercepting API requests and
+            // avoids the "no-response" error when the API URL changes (e.g. search params).
             urlPattern: /^https?:\/\/.*\/api\/v1\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
+            handler: "NetworkOnly",
           },
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
@@ -65,6 +58,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
     },
   },
 });

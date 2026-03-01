@@ -122,9 +122,9 @@ export default function ProfilePage() {
             {user.lastName.charAt(0)}
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Mi Perfil</h1>
+            <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
             <p className="text-muted-foreground mt-1">
-              Administra tu información personal
+              Manage your personal information
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function ProfilePage() {
           className="gap-2 rounded-xl transition-all duration-200 active:scale-95 shadow-sm shadow-destructive/20"
         >
           <LogOut className="h-4 w-4" />
-          Cerrar sesión
+          Log out
         </Button>
       </motion.div>
 
@@ -151,24 +151,24 @@ export default function ProfilePage() {
               <div>
                 <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  Correo electrónico
+                  Email
                 </label>
                 <div className="text-sm font-medium">{user.email}</div>
               </div>
               <div>
                 <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  Rol
+                  Role
                 </label>
                 <div className="text-sm font-medium">{user.role}</div>
               </div>
               <div>
                 <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  Miembro desde
+                  Member since
                 </label>
                 <div className="text-sm font-medium">
-                  {new Intl.DateTimeFormat("es-MX", {
+                  {new Intl.DateTimeFormat("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -191,7 +191,7 @@ export default function ProfilePage() {
             <Card className="border-border/50 shadow-sm backdrop-blur-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-6 pb-2 border-b">
-                  Datos personales
+                  Personal Information
                 </h3>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
@@ -199,10 +199,10 @@ export default function ProfilePage() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre</FormLabel>
+                        <FormLabel>First Name</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Juan"
+                            placeholder="John"
                             autoComplete="given-name"
                             {...field}
                           />
@@ -216,10 +216,10 @@ export default function ProfilePage() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Apellido</FormLabel>
+                        <FormLabel>Last Name</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="García"
+                            placeholder="Doe"
                             autoComplete="family-name"
                             {...field}
                           />
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                     name="company"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-2">
-                        <FormLabel>Empresa (Opcional)</FormLabel>
+                        <FormLabel>Company (Optional)</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Acme Corp"
@@ -254,11 +254,11 @@ export default function ProfilePage() {
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-2 pb-2 border-b flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-primary" />
-                  Ubicación de la Empresa
+                  Company Location
                 </h3>
                 <p className="text-xs text-muted-foreground mb-4">
-                  Piná la ubicación de tu empresa para usarla al crear
-                  solicitudes de préstamo.
+                  Pin your company location to use it when creating loan
+                  requests.
                 </p>
                 <LocationPicker value={location} onChange={setLocation} />
               </CardContent>
@@ -275,7 +275,7 @@ export default function ProfilePage() {
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Guardar cambios
+                Save changes
               </Button>
             </div>
           </form>
