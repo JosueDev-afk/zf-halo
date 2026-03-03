@@ -15,10 +15,15 @@ export class NotificationProcessor extends WorkerHost {
     super();
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async process(job: Job<any, any, string>): Promise<any> {
     switch (job.name) {
       case 'send-notification': {
-        const { notificationId, title, message } = job.data;
+        const { notificationId, title, message } = job.data as {
+          notificationId: string;
+          title: string;
+          message: string;
+        };
         this.logger.log(
           `Processing notification [${notificationId}]: ${title}`,
         );

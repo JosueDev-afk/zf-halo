@@ -10,18 +10,18 @@ import { UserPrismaRepository } from '../infrastructure/persistence/prisma/user.
 import { USER_REPOSITORY } from '../domain/repositories/user.repository.interface';
 
 @Module({
-    imports: [AuthModule],
-    controllers: [UsersController],
-    providers: [
-        GetUsersUseCase,
-        GetUserByIdUseCase,
-        UpdateUserUseCase,
-        DeactivateUserUseCase,
-        {
-            provide: USER_REPOSITORY,
-            useClass: UserPrismaRepository,
-        },
-    ],
-    exports: [GetUsersUseCase, GetUserByIdUseCase],
+  imports: [AuthModule],
+  controllers: [UsersController],
+  providers: [
+    GetUsersUseCase,
+    GetUserByIdUseCase,
+    UpdateUserUseCase,
+    DeactivateUserUseCase,
+    {
+      provide: USER_REPOSITORY,
+      useClass: UserPrismaRepository,
+    },
+  ],
+  exports: [GetUsersUseCase, GetUserByIdUseCase],
 })
 export class UsersModule {}

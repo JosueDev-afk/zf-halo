@@ -4,11 +4,7 @@ import {
   INotificationRepository,
   CreateNotificationData,
 } from '../../../domain/repositories/notification.repository.interface';
-import {
-  InternalNotification,
-  NotificationStatus,
-  NotificationType,
-} from '../../../domain/entities/notification.entity';
+import { InternalNotification } from '../../../domain/entities/notification.entity';
 import { PaginatedResult } from '../../../application/dtos/common/paginated-result.dto';
 
 @Injectable()
