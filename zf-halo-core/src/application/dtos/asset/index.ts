@@ -1,2 +1,2 @@
-// Asset DTOs - Placeholder for future implementation
-// This file will contain DTOs for asset catalog and inventory operations
+export { CreateAssetDto } from './create-asset.dto';
+export { UpdateAssetDto } from './update-asset.dto';

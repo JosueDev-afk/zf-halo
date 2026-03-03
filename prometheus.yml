@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'zf-halo-core'
+    static_configs:
+      - targets: ['zf-halo-core:3000']
+        labels:
+          application: 'ZF Halo Core'

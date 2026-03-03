@@ -19,6 +19,8 @@ Sistema integral de gestión de préstamos de activos patrimoniales con trazabil
 ## 📋 Tabla de Contenidos
 
 - [Descripción General](#-descripción-general)
+- [Credenciales de Acceso](#-credenciales-de-acceso)
+- [Changelog — Cambios Implementados](#-changelog--cambios-implementados)
 - [Arquitectura del Sistema](#-arquitectura-del-sistema)
 - [Stack Tecnológico](#-stack-tecnológico)
 - [Estructura del Proyecto](#-estructura-del-proyecto)
@@ -29,6 +31,112 @@ Sistema integral de gestión de préstamos de activos patrimoniales con trazabil
 - [API Reference](#-api-reference)
 - [Testing](#-testing)
 - [Contribución](#-contribución)
+
+---
+
+## 🔑 Credenciales de Acceso
+
+> **Contraseña universal para todos los usuarios seed:** `password123`
+
+### Usuarios Principales por Rol
+
+| Rol         | Email                 | Contraseña    | Permisos                                                          |
+| ----------- | --------------------- | ------------- | ----------------------------------------------------------------- |
+| **ADMIN**   | `admin@zf-halo.com`   | `password123` | Acceso total: gestión de activos, usuarios, préstamos, reportes   |
+| **MANAGER** | `manager@zf-halo.com` | `password123` | Autorizar préstamos, ver todos los préstamos, solicitar préstamos |
+| **USER**    | `user@zf-halo.com`    | `password123` | Solicitar préstamos, ver sus propios préstamos                    |
+| **AUDITOR** | `auditor@zf-halo.com` | `password123` | Lectura de todos los recursos + exportación de reportes           |
+
+### Datos de Prueba generados por el Seed
+
+```bash
+cd zf-halo-core
+pnpm prisma db seed
+```
+
+El seed genera automáticamente:
+
+| Recurso               | Cantidad | Descripción                                   |
+| --------------------- | -------- | --------------------------------------------- |
+| Usuarios seed (roles) | 4        | admin, manager, user, auditor                 |
+| Usuarios faker        | 100      | Roles mixtos (USER x3, MANAGER, AUDITOR)      |
+| Activos faker         | 10,000   | BULK y SERIALIZED, generados por lotes de 500 |
+| Destinos              | 7        | Plantas y oficinas en México                  |
+
+---
+
+## 📝 Changelog — Cambios Implementados
+
+### v1.4.0 — Módulo de Préstamos Refactorizado (Feb 2026)
+
+#### 🏗 Backend
+
+| Archivo                   | Cambio                                                                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GetLoansQueryDto`        | **[NEW]** DTO que extiende `PaginationQueryDto` con campos opcionales `status` y `requesterId`. Resuelve el error 400 "property status should not exist" al filtrar préstamos |
+| `LoanController.getLoans` | Usa `GetLoansQueryDto` y construye filtros dinámicos según el rol del usuario (USER solo ve sus propios préstamos)                                                            |
+| `RequestLoanUseCase`      | **Stock management:** Ahora decrementa `currentQuantity` en activos BULK y cambia `machineStatus = LOANED` en activos serializados al crear un préstamo                       |
+| `CheckInLoanUseCase`      | **Stock restore:** Restaura `currentQuantity += loan.quantity` en BULK y `machineStatus = OPERATIVE` en serializados al hacer check-in (devolución)                           |
+| `role-permissions.map.ts` | Agrega `LOAN_VIEW_OWN` al rol ADMIN y `LOAN_REQUEST` + `LOAN_VIEW_OWN` al rol MANAGER (resuelve error 403)                                                                    |
+
+#### 🎨 Frontend
+
+| Archivo                | Cambio                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useLoans.ts`          | Todas las llamadas a `invalidateQueries` ahora usan `{ exact: false }` para invalidar correctamente queryKeys anidadas como `["loans", page, limit, filters]`                               |
+| `router.tsx`           | Ruta `/loans` redirige a `/loans/active`. Nuevas rutas: `/loans/active`, `/loans/pending`, `/loans/history`                                                                                 |
+| `LoansLayout.tsx`      | **[NEW]** Layout compartido para el módulo de préstamos con navegación tipo tabs (Activos / Pendientes / Historial). Badge ámbar muestra el conteo de solicitudes pendientes. FAB en mobile |
+| `ActiveLoansPage.tsx`  | **[NEW]** Muestra préstamos `CHECKED_OUT` en tabla con acción "Devolver" (admin)                                                                                                            |
+| `PendingLoansPage.tsx` | **[NEW]** Muestra solicitudes `REQUESTED` como cards con botones Autorizar/Rechazar                                                                                                         |
+| `LoansHistoryPage.tsx` | **[NEW]** Historial completo de todos los préstamos con badges de estado y paginación                                                                                                       |
+| `BottomNav.tsx`        | Apunta a `/loans/active`. `isActive` usa `startsWith("/loans")` para resaltar el tab en cualquier sub-ruta del módulo                                                                       |
+| `AssetsPage.tsx`       | Botón "Solicitar Préstamo" en cada tarjeta de activo. Deshabilitado si `currentQuantity === 0` o `machineStatus === LOANED`. Todas las cadenas en español                                   |
+| `LoanRequestSheet.tsx` | Prop opcional `preselectedAsset` para pre-llenar el activo seleccionado desde AssetsPage                                                                                                    |
+
+---
+
+### v1.3.0 — Localización y Correcciones UI (Feb 2026)
+
+| Archivo           | Cambio                                                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `BottomNav.tsx`   | Labels en español: "Inicio", "Activos", "Préstamos", "Perfil"                                                          |
+| `ProfilePage.tsx` | Todos los textos en español: título, subtítulo, etiquetas de campos, botones, toast messages. Locale `es-MX` en fechas |
+| `useLoans.ts`     | Toast messages de mutaciones en español                                                                                |
+
+---
+
+### v1.2.0 — PWA, QR Scanner y Bottom Sheets (Feb 2026)
+
+| Área                 | Cambio                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **PWA**              | Service worker, manifest, iconos, modo offline                                                                                       |
+| **QR Scanner**       | `QRScannerSheet` que usa la cámara del dispositivo (mobile) para escanear el tag/QR de un activo y crear el préstamo automáticamente |
+| **Bottom Sheets**    | `LoanRequestSheet` y `QRScannerSheet` con z-index correcto (`z-[60]/z-[61]`) por encima del `BottomNav` (`z-50`)                     |
+| **Theme**            | Colores usando tokens CSS (`bg-card`, `border-border`) en lugar de valores hardcoded dark                                            |
+| **Destinos en seed** | 5 destinos de México agregados al seed                                                                                               |
+
+---
+
+### v1.1.0 — Módulo de Usuarios y Perfil (Feb 2026)
+
+| Área                    | Cambio                                                                                    |
+| ----------------------- | ----------------------------------------------------------------------------------------- |
+| **ProfilePage**         | Edición de perfil con nombre, apellido, empresa y ubicación en mapa (OpenStreetMap + pin) |
+| **Gestión de usuarios** | `UsersPage`, `UserDetailPage`, `AdminUserEditPage`, `PendingApprovalsPage`                |
+| **Flujo de registro**   | Sign-up → Pendiente de aprobación → Admin aprueba → Usuario activo                        |
+
+---
+
+### v1.0.0 — Base del Sistema (Feb 2026)
+
+| Área         | Cambio                                                               |
+| ------------ | -------------------------------------------------------------------- |
+| **Backend**  | NestJS + Prisma + PostgreSQL, Arquitectura Hexagonal                 |
+| **Auth**     | JWT, RBAC con guards y decoradores, bcrypt                           |
+| **Assets**   | CRUD completo con soporte BULK/SERIALIZED, paginación, soft delete   |
+| **Loans**    | Estado de máquina: REQUESTED → AUTHORIZED → CHECKED_OUT → RETURNED   |
+| **Frontend** | React 19 + Vite + TanStack Router/Query + shadcn/ui + Tailwind CSS 4 |
+| **Docker**   | docker-compose con PostgreSQL, Redis, backend y frontend             |
 
 ---
 
@@ -137,42 +245,46 @@ El backend implementa **Arquitectura Hexagonal** para garantizar separación de 
 
 ### Backend (`zf-halo-core`)
 
-| Categoría | Tecnología | Propósito |
-|-----------|------------|-----------|
-| **Framework** | NestJS 11 | Framework modular con inyección de dependencias |
-| **ORM** | Prisma 7 | Type-safe database access con migraciones |
-| **Database** | PostgreSQL 15 | Base de datos relacional ACID |
-| **Cache** | Redis 7 | Cache distribuido y cola de mensajes |
-| **Queue** | BullMQ | Procesamiento de jobs en background |
-| **Security** | Helmet + CORS | Protección contra vulnerabilidades OWASP |
-| **Metrics** | Prometheus | Exportación de métricas para observabilidad |
-| **Notifications** | Telegraf | Notificaciones vía Telegram Bot |
-| **Validation** | class-validator | Validación de DTOs y request bodies |
-| **Testing** | Jest + Supertest | Unit tests y E2E tests |
+| Categoría                  | Tecnología               | Propósito                                       |
+| -------------------------- | ------------------------ | ----------------------------------------------- |
+| **Framework**              | NestJS 11                | Framework modular con inyección de dependencias |
+| **ORM**                    | Prisma 7                 | Type-safe database access con migraciones       |
+| **Database**               | PostgreSQL 15            | Base de datos relacional ACID                   |
+| **Cache**                  | Redis 7                  | Cache distribuido y cola de mensajes            |
+| **Queue**                  | BullMQ                   | Procesamiento de jobs en background             |
+| **Security**               | Helmet + CORS            | Protección contra vulnerabilidades OWASP        |
+| **Metrics**                | Prometheus               | Exportación de métricas para observabilidad     |
+| **Accounts & Permissions** | NestJS Guards/Decorators |
+
+- Two-step registration flow: Sign-up -> Admin Approval -> Active User.
+- Role-Based Access Control (RBAC) with granular permissions (e.g., `loan:approve`, `asset:manage`).
+- Guards and Decorators for secure endpoint protection.
+  | **Validation** | class-validator | Validación de DTOs y request bodies |
+  | **Testing** | Jest + Supertest | Unit tests y E2E tests |
 
 ### Frontend (`zf-halo-client`)
 
-| Categoría | Tecnología | Propósito |
-|-----------|------------|-----------|
-| **Framework** | React 19 | UI library con concurrent features |
-| **Bundler** | Vite 7 | Build tool ultrarrápido con HMR |
-| **Routing** | TanStack Router | Type-safe routing con code splitting |
-| **State** | TanStack Query | Server state management con cache |
-| **UI Components** | shadcn/ui | Componentes accesibles y customizables |
-| **Styling** | Tailwind CSS 4 | Utility-first CSS framework |
-| **Icons** | Lucide React | Iconografía moderna y consistente |
-| **HTTP Client** | Axios | Cliente HTTP con interceptors |
-| **PWA** | vite-plugin-pwa | Service workers y manifest |
-| **Charts** | Recharts | Gráficos interactivos para dashboard |
+| Categoría         | Tecnología      | Propósito                              |
+| ----------------- | --------------- | -------------------------------------- |
+| **Framework**     | React 19        | UI library con concurrent features     |
+| **Bundler**       | Vite 7          | Build tool ultrarrápido con HMR        |
+| **Routing**       | TanStack Router | Type-safe routing con code splitting   |
+| **State**         | TanStack Query  | Server state management con cache      |
+| **UI Components** | shadcn/ui       | Componentes accesibles y customizables |
+| **Styling**       | Tailwind CSS 4  | Utility-first CSS framework            |
+| **Icons**         | Lucide React    | Iconografía moderna y consistente      |
+| **HTTP Client**   | Axios           | Cliente HTTP con interceptors          |
+| **PWA**           | vite-plugin-pwa | Service workers y manifest             |
+| **Charts**        | Recharts        | Gráficos interactivos para dashboard   |
 
 ### DevOps & Observabilidad
 
-| Categoría | Tecnología | Propósito |
-|-----------|------------|-----------|
+| Categoría      | Tecnología       | Propósito                       |
+| -------------- | ---------------- | ------------------------------- |
 | **Containers** | Docker + Compose | Containerización y orquestación |
-| **Metrics** | Prometheus | Recolección de métricas |
-| **Dashboard** | Grafana | Visualización de métricas |
-| **CI/CD** | GitHub Actions | Automatización de pipelines |
+| **Metrics**    | Prometheus       | Recolección de métricas         |
+| **Dashboard**  | Grafana          | Visualización de métricas       |
+| **CI/CD**      | GitHub Actions   | Automatización de pipelines     |
 
 ---
 
@@ -354,12 +466,12 @@ zf-halo/
 
 ### 👥 Roles del Sistema (22% de la rúbrica)
 
-| Rol | Permisos | Descripción |
-|-----|----------|-------------|
-| **Usuario** | `READ`, `REQUEST` | Solicita préstamos, visualiza catálogo |
-| **Gerente/Líder** | `READ`, `REQUEST`, `APPROVE` | Autoriza préstamos de su equipo |
-| **Administrador Patrimonial** | `FULL_ACCESS` | Gestión completa de activos y préstamos |
-| **Auditor** | `READ`, `EXPORT` | Acceso de solo lectura + exportación |
+| Rol                           | Permisos                     | Descripción                             |
+| ----------------------------- | ---------------------------- | --------------------------------------- |
+| **Usuario**                   | `READ`, `REQUEST`            | Solicita préstamos, visualiza catálogo  |
+| **Gerente/Líder**             | `READ`, `REQUEST`, `APPROVE` | Autoriza préstamos de su equipo         |
+| **Administrador Patrimonial** | `FULL_ACCESS`                | Gestión completa de activos y préstamos |
+| **Auditor**                   | `READ`, `EXPORT`             | Acceso de solo lectura + exportación    |
 
 ### 🔄 Flujo de Préstamo
 
@@ -391,35 +503,35 @@ zf-halo/
 
 Cada activo debe contener:
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `id` | UUID | Identificador único del sistema |
-| `code` | String | Código interno (ej: ZF-LAP-001) |
-| `brand` | String | Marca del activo |
-| `model` | String | Modelo del activo |
-| `serialNumber` | String | Número de serie del fabricante |
-| `partNumber` | String | Número de parte |
-| `name` | String | Nombre descriptivo |
-| `description` | Text | Descripción detallada |
-| `category` | Enum | Categoría (LAPTOP, PROJECTOR, TOOL, etc.) |
-| `status` | Enum | AVAILABLE, IN_USE, MAINTENANCE, RETIRED |
-| `location` | String | Ubicación física actual |
-| `qrCode` | String | URL del perfil del activo (para QR) |
-| `imageUrl` | String | Foto del activo |
-| `createdAt` | DateTime | Fecha de registro |
-| `updatedAt` | DateTime | Última actualización |
+| Campo          | Tipo     | Descripción                               |
+| -------------- | -------- | ----------------------------------------- |
+| `id`           | UUID     | Identificador único del sistema           |
+| `code`         | String   | Código interno (ej: ZF-LAP-001)           |
+| `brand`        | String   | Marca del activo                          |
+| `model`        | String   | Modelo del activo                         |
+| `serialNumber` | String   | Número de serie del fabricante            |
+| `partNumber`   | String   | Número de parte                           |
+| `name`         | String   | Nombre descriptivo                        |
+| `description`  | Text     | Descripción detallada                     |
+| `category`     | Enum     | Categoría (LAPTOP, PROJECTOR, TOOL, etc.) |
+| `status`       | Enum     | AVAILABLE, IN_USE, MAINTENANCE, RETIRED   |
+| `location`     | String   | Ubicación física actual                   |
+| `qrCode`       | String   | URL del perfil del activo (para QR)       |
+| `imageUrl`     | String   | Foto del activo                           |
+| `createdAt`    | DateTime | Fecha de registro                         |
+| `updatedAt`    | DateTime | Última actualización                      |
 
 ### 🏢 Catálogo de Destinos (Instituciones Externas)
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `id` | UUID | Identificador único |
-| `name` | String | Nombre de la institución |
-| `address` | String | Dirección física |
-| `contactName` | String | Nombre del contacto |
-| `contactEmail` | String | Email del contacto |
-| `contactPhone` | String | Teléfono del contacto |
-| `activeLoans` | Relation | Préstamos activos a esta institución |
+| Campo          | Tipo     | Descripción                          |
+| -------------- | -------- | ------------------------------------ |
+| `id`           | UUID     | Identificador único                  |
+| `name`         | String   | Nombre de la institución             |
+| `address`      | String   | Dirección física                     |
+| `contactName`  | String   | Nombre del contacto                  |
+| `contactEmail` | String   | Email del contacto                   |
+| `contactPhone` | String   | Teléfono del contacto                |
+| `activeLoans`  | Relation | Préstamos activos a esta institución |
 
 ---
 
@@ -546,13 +658,13 @@ docker-compose down
 
 ### Acceso a Servicios
 
-| Servicio | URL | Descripción |
-|----------|-----|-------------|
-| Frontend | http://localhost:5173 | Aplicación React |
-| Backend API | http://localhost:3000/api | REST API |
-| API Docs | http://localhost:3000/api/docs | Swagger UI |
-| Grafana | http://localhost:3001 | Dashboard de métricas |
-| Prometheus | http://localhost:9090 | Métricas raw |
+| Servicio    | URL                            | Descripción           |
+| ----------- | ------------------------------ | --------------------- |
+| Frontend    | http://localhost:5173          | Aplicación React      |
+| Backend API | http://localhost:3000/api      | REST API              |
+| API Docs    | http://localhost:3000/api/docs | Swagger UI            |
+| Grafana     | http://localhost:3001          | Dashboard de métricas |
+| Prometheus  | http://localhost:9090          | Métricas raw          |
 
 ---
 
@@ -676,13 +788,13 @@ npx artillery run load-tests/scenarios.yml
 
 El dashboard interactivo incluye:
 
-| KPI | Descripción | Visualización |
-|-----|-------------|---------------|
-| **Disponibilidad** | % de activos disponibles vs total | Gauge chart |
-| **Top 10 Vencidos** | Activos con mayor tiempo de retraso | Table + alerts |
-| **Más Solicitados** | Ranking de activos populares | Bar chart |
-| **Uso por Disciplina** | Distribución por categoría | Pie chart |
-| **Tendencia Mensual** | Préstamos por mes | Line chart |
+| KPI                    | Descripción                         | Visualización  |
+| ---------------------- | ----------------------------------- | -------------- |
+| **Disponibilidad**     | % de activos disponibles vs total   | Gauge chart    |
+| **Top 10 Vencidos**    | Activos con mayor tiempo de retraso | Table + alerts |
+| **Más Solicitados**    | Ranking de activos populares        | Bar chart      |
+| **Uso por Disciplina** | Distribución por categoría          | Pie chart      |
+| **Tendencia Mensual**  | Préstamos por mes                   | Line chart     |
 
 ---
 
@@ -690,14 +802,14 @@ El dashboard interactivo incluye:
 
 ### Medidas Implementadas (OWASP Top 10)
 
-| Vulnerabilidad | Mitigación |
-|----------------|------------|
-| **Inyección SQL** | Prisma ORM con queries parametrizados |
-| **XSS** | Helmet headers + sanitización de inputs |
-| **CSRF** | Tokens de sesión + SameSite cookies |
-| **Broken Auth** | JWT + refresh tokens + rate limiting |
-| **Sensitive Data** | HTTPS + encripción de passwords (bcrypt) |
-| **Broken Access Control** | RBAC con guards en cada endpoint |
+| Vulnerabilidad            | Mitigación                               |
+| ------------------------- | ---------------------------------------- |
+| **Inyección SQL**         | Prisma ORM con queries parametrizados    |
+| **XSS**                   | Helmet headers + sanitización de inputs  |
+| **CSRF**                  | Tokens de sesión + SameSite cookies      |
+| **Broken Auth**           | JWT + refresh tokens + rate limiting     |
+| **Sensitive Data**        | HTTPS + encripción de passwords (bcrypt) |
+| **Broken Access Control** | RBAC con guards en cada endpoint         |
 
 ---
 
@@ -755,15 +867,15 @@ git push origin feature/nombre-feature
 
 ### Convención de Commits
 
-| Prefijo | Uso |
-|---------|-----|
-| `feat:` | Nueva funcionalidad |
-| `fix:` | Corrección de bug |
-| `docs:` | Documentación |
-| `style:` | Formato (no afecta lógica) |
-| `refactor:` | Refactorización |
-| `test:` | Tests |
-| `chore:` | Mantenimiento |
+| Prefijo     | Uso                        |
+| ----------- | -------------------------- |
+| `feat:`     | Nueva funcionalidad        |
+| `fix:`      | Corrección de bug          |
+| `docs:`     | Documentación              |
+| `style:`    | Formato (no afecta lógica) |
+| `refactor:` | Refactorización            |
+| `test:`     | Tests                      |
+| `chore:`    | Mantenimiento              |
 
 ---
 

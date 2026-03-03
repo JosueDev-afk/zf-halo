@@ -1,73 +1,67 @@
-# React + TypeScript + Vite
+# ZF-HALO Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A futuristic, minimalist, mobile-first React PWA for Asset Management.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Framework:** React 19 + Vite
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4 + Shadcn UI + Framer Motion
+- **State Management:** Zustand
+- **Routing:** TanStack Router
+- **Form Handling:** React Hook Form + Zod
+- **PWA:** Vite PWA Plugin
+- **Architecture:** Clean Architecture (Domain, Infrastructure, Application, Presentation)
 
-## React Compiler
+## Project Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── application/       # State management (Zustand stores), use cases
+├── domain/           # Core entities, repository interfaces, value objects
+├── infrastructure/   # API clients, repository implementations
+├── presentation/     # UI components, pages, routes, layouts
+│   ├── components/   # Shared UI components (Shadcn)
+│   ├── layouts/      # Layout wrappers
+│   ├── modules/      # Feature-specific pages (Auth, etc.)
+│   └── routes/       # Router configuration
+└── lib/              # Utilities
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js (Latest LTS)
+- pnpm
+
+### Installation
+
+```bash
+pnpm install
 ```
+
+### Development
+
+```bash
+pnpm dev
+```
+
+### Build
+
+```bash
+pnpm build
+```
+
+## Features
+
+- **Authentication:** Login/Register with JWT, RBAC (Role-Based Access Control).
+- **Mobile First:** Bottom navigation, touch-friendly UI.
+- **PWA:** Installable on mobile devices.
+- **Visuals:** Futuristic "ZF Engineering" aesthetic with dark mode and glassmorphism.
+
+## Architecture Highlights
+
+- **Repository Pattern:** Logic is decoupled from the UI. `AuthRepository` handles API calls, ensuring easy testing and swapping of data sources.
+- **Strict Typing:** Full TypeScript coverage with strict mode.
+- **Modern Routing:** Type-safe routing with TanStack Router.

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccountsModule } from './accounts.module';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -10,6 +11,7 @@ import { RolesGuard } from '../infrastructure/http/guards/roles.guard';
 
 @Module({
   imports: [
+    AccountsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
