@@ -27,17 +27,20 @@ import { DashboardModule } from './modules/dashboard.module';
       envFilePath: '.env',
     }),
     EventEmitterModule.forRoot(),
-    ScheduleModule.forRoot(),
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.get<string>('REDIS_HOST', 'redis'),
-          port: config.get<number>('REDIS_PORT', 6379),
-        },
-      }),
-    }),
+    ...(process.env.NODE_ENV === 'test'
+      ? []
+      : [
+          BullModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+              connection: {
+                host: config.get<string>('REDIS_HOST', 'redis'),
+                port: config.get<number>('REDIS_PORT', 6379),
+              },
+            }),
+          }),
+        ]),
     // Rate limiting (300 requests per 60 seconds)
     ThrottlerModule.forRoot([
       {

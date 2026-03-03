@@ -19,6 +19,7 @@ describe('Auth (e2e)', () => {
   };
 
   beforeAll(async () => {
+    process.env.REDIS_HOST = 'localhost';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -42,11 +43,11 @@ describe('Auth (e2e)', () => {
 
   beforeEach(async () => {
     // Clean database before each test
-    await prisma.user.deleteMany();
+    await prisma.cleanDatabase();
   });
 
   afterAll(async () => {
-    await prisma.user.deleteMany();
+    await prisma.cleanDatabase();
     await app.close();
   });
 

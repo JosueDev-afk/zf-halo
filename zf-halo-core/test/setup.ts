@@ -8,6 +8,7 @@ process.env.JWT_EXPIRES_IN = '1h';
 process.env.DATABASE_URL =
   process.env.DATABASE_URL ||
   'postgresql://user_zf:password_zf@localhost:5432/zf_halo?schema=public';
+process.env.REDIS_HOST = 'localhost';
 
 // DATABASE_URL is set above for local testing
 // In CI, this will be overridden by the workflow environment

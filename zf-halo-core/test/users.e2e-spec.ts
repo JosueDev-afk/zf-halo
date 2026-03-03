@@ -18,6 +18,7 @@ describe('Users Module (E2E)', () => {
   let userId: string;
 
   beforeAll(async () => {
+    process.env.REDIS_HOST = 'localhost';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -30,8 +31,7 @@ describe('Users Module (E2E)', () => {
     prisma = app.get(PrismaService);
 
     // Cleanup
-    await prisma.accountRequest.deleteMany();
-    await prisma.user.deleteMany();
+    await prisma.cleanDatabase();
 
     const passwordHash = await bcrypt.hash('password123', 12);
 
@@ -74,8 +74,8 @@ describe('Users Module (E2E)', () => {
   });
 
   afterAll(async () => {
-    await prisma.accountRequest.deleteMany();
-    await prisma.user.deleteMany();
+    await prisma.cleanDatabase();
+    await prisma.$disconnect();
     await app.close();
   });
 

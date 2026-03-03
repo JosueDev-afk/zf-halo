@@ -9,16 +9,32 @@ import { PrismaModule } from '../infrastructure/persistence/prisma/prisma.module
 @Module({
   imports: [
     PrismaModule,
-    BullModule.registerQueue({
-      name: 'notifications',
-    }),
+    ...(process.env.NODE_ENV === 'test'
+      ? []
+      : [
+          BullModule.registerQueue({
+            name: 'notifications',
+          }),
+        ]),
   ],
   providers: [
+    ...(process.env.NODE_ENV === 'test'
+      ? [
+          {
+            provide: 'BullQueue_notifications',
+            useValue: {
+              add: jest.fn(),
+              process: jest.fn(),
+              on: jest.fn(),
+            },
+          },
+        ]
+      : []),
     {
       provide: NOTIFICATION_REPOSITORY,
       useClass: NotificationPrismaRepository,
     },
-    NotificationProcessor,
+    ...(process.env.NODE_ENV === 'test' ? [] : [NotificationProcessor]),
     LoanEventListener,
   ],
   exports: [NOTIFICATION_REPOSITORY],
