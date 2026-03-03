@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 
+.agent
+.agents
+
+skills-lock.json
+
 # Build outputs
 dist/
 build/

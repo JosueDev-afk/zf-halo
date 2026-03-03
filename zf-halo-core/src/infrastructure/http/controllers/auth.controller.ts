@@ -13,39 +13,46 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiUnauthorizedResponse,
-  ApiConflictResponse,
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { AuthService } from '../../../application/services/auth.service';
 import {
   LoginDto,
-  RegisterDto,
   AuthResponseDto,
   UserResponseDto,
 } from '../../../application/dtos/auth';
+import { SubmitRegistrationUseCase } from '../../../application/use-cases/accounts/submit-registration.use-case';
+import { SubmitRegistrationDto } from '../../../application/dtos/accounts/submit-registration.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly submitRegistrationUseCase: SubmitRegistrationUseCase,
+  ) {}
 
   /**
-   * Register a new user
-   * POST /api/auth/register
+   * Submit a new account registration request
+   * POST /api/v1/auth/register
    */
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
+  @ApiOperation({ summary: 'Submit a new account registration request' })
   @ApiResponse({
     status: 201,
-    description: 'User registered successfully',
-    type: AuthResponseDto,
+    description: 'Registration submitted successfully',
   })
-  @ApiConflictResponse({ description: 'Email already registered' })
-  @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(dto);
+  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  async register(@Body() dto: SubmitRegistrationDto) {
+    const request = await this.submitRegistrationUseCase.execute(dto);
+    return {
+      message:
+        'Registration submitted successfully. Please wait for admin approval.',
+      requestId: request.id,
+    };
   }
 
   /**

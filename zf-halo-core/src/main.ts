@@ -32,7 +32,9 @@ async function bootstrap() {
   );
 
   // API prefix with versioning
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['metrics'],
+  });
 
   // Swagger configuration
   const config = new DocumentBuilder()
@@ -74,6 +76,7 @@ async function bootstrap() {
   logger.log(
     `🔐 Auth endpoints: POST /api/v1/auth/register, POST /api/v1/auth/login, GET /api/v1/auth/me`,
   );
+  logger.log(`📊 Metrics: http://localhost:${port}/metrics`);
 }
 
 bootstrap().catch((err) => {

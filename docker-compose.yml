@@ -42,6 +42,7 @@ services:
       JWT_SECRET: "dev-secret-change-in-production-32chars"
       JWT_EXPIRES_IN: "7d"
       NODE_ENV: development
+      CORS_ORIGIN: "http://localhost:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,7 +60,18 @@ services:
   grafana:
     image: grafana/grafana
     container_name: zf-grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     ports:
       - "3001:3000"
     depends_on:
       - prometheus
+
+  zf-halo-client:
+    build: ./zf-halo-client
+    container_name: zf-client
+    ports:
+      - "8080:80" # Map to 8080 to avoid conflicts with system services on port 80
+    depends_on:
+      - zf-halo-core
