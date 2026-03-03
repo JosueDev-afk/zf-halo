@@ -5,7 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ScheduleModule } from '@nestjs/schedule';
+
 import { BullModule } from '@nestjs/bullmq';
 
 import { AuthModule } from './modules/auth.module';

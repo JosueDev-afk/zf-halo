@@ -8,7 +8,7 @@ describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
-    process.env.REDIS_HOST = "localhost";
+    process.env.REDIS_HOST = 'localhost';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
