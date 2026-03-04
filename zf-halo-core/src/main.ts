@@ -11,9 +11,18 @@ async function bootstrap() {
   // Security headers (OWASP protection)
   app.use(helmet());
 
+  // Request Logging Middleware for debugging Nginx routing
+  app.use((req: any, res: any, next: any) => {
+    logger.log(`Incoming request: ${req.method} ${req.originalUrl || req.url}`);
+    next();
+  });
+
   // CORS configuration
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: [
+      process.env.CORS_ORIGIN || 'http://localhost:5173',
+      'https://zf-halo.kubistudio.cloud',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
