@@ -111,9 +111,9 @@ describe('Users Module (E2E)', () => {
         .expect(200);
 
       // Because GET /users returns PaginatedResult<User>
-      expect(response.body).toHaveProperty('data');
-      expect(Array.isArray(response.body.data)).toBe(true);
-      expect(response.body.data.length).toBeGreaterThanOrEqual(1);
+      expect(response.body).toHaveProperty('items');
+      expect(Array.isArray(response.body.items)).toBe(true);
+      expect(response.body.items.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should forbid non-admin', async () => {

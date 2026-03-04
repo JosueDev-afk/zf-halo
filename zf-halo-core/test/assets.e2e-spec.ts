@@ -185,11 +185,10 @@ describe('Assets Module (E2E)', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
-      console.log('Assets Get Response:', response.body);
       // Because GET /assets returns PaginatedResult<Asset>
-      expect(response.body).toHaveProperty('data');
-      expect(Array.isArray(response.body.data)).toBe(true);
-      expect(response.body.data.length).toBeGreaterThanOrEqual(2);
+      expect(response.body).toHaveProperty('items');
+      expect(Array.isArray(response.body.items)).toBe(true);
+      expect(response.body.items.length).toBeGreaterThanOrEqual(2);
     });
   });
 

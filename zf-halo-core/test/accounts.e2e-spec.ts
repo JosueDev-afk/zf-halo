@@ -63,6 +63,8 @@ describe('Accounts Module (E2E)', () => {
         firstName: 'New',
         lastName: 'User',
         password: 'Password123',
+        confirmPassword: 'Password123',
+        company: 'Acme Corp',
       };
 
       const hasRequiredLength = dto.password.length >= 8;
@@ -71,8 +73,6 @@ describe('Accounts Module (E2E)', () => {
       const response = await request(app.getHttpServer())
         .post('/api/v1/accounts/register')
         .send(dto);
-
-      console.log('Register Response:', response.body);
 
       expect(response.status).toBe(201);
 
@@ -97,13 +97,13 @@ describe('Accounts Module (E2E)', () => {
         firstName: 'Duplicate',
         lastName: 'User',
         password: 'Password123',
+        confirmPassword: 'Password123',
+        company: 'Acme Corp',
       };
 
       const response = await request(app.getHttpServer())
         .post('/api/v1/accounts/register')
         .send(dto);
-
-      console.log('Duplicate Register Response:', response.body);
 
       expect(response.status).toBe(409);
     });
