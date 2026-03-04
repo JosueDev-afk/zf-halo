@@ -48,6 +48,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   prometheus:
     image: prom/prometheus
@@ -74,4 +79,5 @@ services:
     expose:
       - "80"
     depends_on:
-      - zf-halo-core
+      zf-halo-core:
+        condition: service_healthy
