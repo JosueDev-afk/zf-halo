@@ -44,6 +44,8 @@ COPY --from=builder /app/node_modules/@generated ./node_modules/@generated
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
+RUN rm -f .env prisma/.env
+
 EXPOSE 3000
 
-CMD ["sh", "-c", "pnpm prisma migrate deploy && (node dist/prisma/seed.js || true) && node dist/src/main"]
+CMD ["sh", "-c", "export DATABASE_URL=${DATABASE_URL} && pnpm prisma migrate deploy && (node dist/prisma/seed.js || true) && node dist/src/main"]
