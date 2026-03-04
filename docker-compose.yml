@@ -75,15 +75,3 @@ services:
       - "80"
     depends_on:
       - zf-halo-core
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.zf-client.rule=Host(`zf-halo.kubistudio.cloud`)"
-      - "traefik.http.services.zf-client.loadbalancer.server.port=80"
-      - "traefik.docker.network=dokploy-network"
-    networks:
-      - default
-      - dokploy-network
-
-networks:
-  dokploy-network:
-    external: true
