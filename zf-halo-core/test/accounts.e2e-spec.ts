@@ -62,7 +62,7 @@ describe('Accounts Module (E2E)', () => {
         email: 'newuser@example.com',
         firstName: 'New',
         lastName: 'User',
-        password: 'password123',
+        password: 'Password123',
       };
 
       const hasRequiredLength = dto.password.length >= 8;
@@ -70,8 +70,11 @@ describe('Accounts Module (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/api/v1/accounts/register')
-        .send(dto)
-        .expect(201);
+        .send(dto);
+
+      console.log('Register Response:', response.body);
+
+      expect(response.status).toBe(201);
 
       expect(response.body).toHaveProperty('requestId');
       expect((response.body as { message: string }).message).toContain(
@@ -93,13 +96,16 @@ describe('Accounts Module (E2E)', () => {
         email: 'newuser@example.com', // Same email
         firstName: 'Duplicate',
         lastName: 'User',
-        password: 'password123',
+        password: 'Password123',
       };
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .post('/api/v1/accounts/register')
-        .send(dto)
-        .expect(409);
+        .send(dto);
+
+      console.log('Duplicate Register Response:', response.body);
+
+      expect(response.status).toBe(409);
     });
   });
 
