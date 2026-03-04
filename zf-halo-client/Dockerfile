@@ -12,6 +12,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+ARG VITE_API_URL=https://api.zf-halo.kubistudio.cloud
+ENV VITE_API_URL=$VITE_API_URL
 RUN pnpm build
 
 # Stage 2: Serve
@@ -22,7 +24,4 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
-# Install ping/nslookup utility if not present
-RUN apk add --no-cache bind-tools curl
-
-CMD ["sh", "-c", "echo 'Waiting for backend...' && while ! ping -c 1 zf-core; do sleep 2; done; echo 'Backend is up, starting Nginx...' && nginx -g 'daemon off;'"]
+CMD ["nginx", "-g", "daemon off;"]
