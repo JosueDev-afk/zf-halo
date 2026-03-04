@@ -22,4 +22,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Install ping/nslookup utility if not present
+RUN apk add --no-cache bind-tools curl
+
+CMD ["sh", "-c", "echo 'Waiting for backend...' && while ! ping -c 1 zf-core; do sleep 2; done; echo 'Backend is up, starting Nginx...' && nginx -g 'daemon off;'"]
